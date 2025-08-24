@@ -119,9 +119,9 @@ export function CreatePromptDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="space-y-3">
-          <DialogTitle className="text-2xl font-semibold tracking-tight">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="space-y-2">
+          <DialogTitle className="text-xl font-semibold tracking-tight">
             {editingPrompt ? "Edit Prompt" : "Create New Prompt"}
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
@@ -132,9 +132,9 @@ export function CreatePromptDialog({
           </p>
         </DialogHeader>
 
-        <div className="space-y-8 py-6">
+        <div className="space-y-6 py-4">
           {/* Title */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <Label htmlFor="title" className="text-sm font-semibold text-foreground">
               Title <span className="text-destructive">*</span>
             </Label>
@@ -143,12 +143,12 @@ export function CreatePromptDialog({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter a descriptive title for your prompt"
-              className="h-11"
+              className="h-9"
             />
           </div>
 
           {/* Description */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <Label htmlFor="description" className="text-sm font-semibold text-foreground">
               Description
             </Label>
@@ -157,15 +157,15 @@ export function CreatePromptDialog({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe what this prompt does and how to use it effectively..."
-              rows={4}
-              className="w-full px-3 py-3 border border-input rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-sm leading-relaxed bg-background"
+              rows={3}
+              className="w-full px-2.5 py-2 border border-input rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-sm leading-relaxed bg-background"
             />
           </div>
 
           {/* Rating */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <Label className="text-sm font-semibold text-foreground">Quality Rating</Label>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <div className="flex items-center gap-1">
                 {Array.from({ length: 5 }, (_, index) => (
                   <button
@@ -176,7 +176,7 @@ export function CreatePromptDialog({
                   >
                     <Star
                       className={cn(
-                        "h-7 w-7 transition-colors",
+                        "h-6 w-6 transition-colors",
                         index < rating
                           ? "fill-amber-400 text-amber-400"
                           : "text-muted-foreground/40 hover:text-amber-300"
@@ -192,9 +192,9 @@ export function CreatePromptDialog({
           </div>
 
           {/* Categories */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <Label className="text-sm font-semibold text-foreground">Categories</Label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {availableCategories
                 .filter(cat => cat !== "ALL")
                 .map((category) => (
@@ -202,7 +202,7 @@ export function CreatePromptDialog({
                     key={category}
                     variant={selectedCategories.includes(category) ? "default" : "outline"}
                     className={cn(
-                      "cursor-pointer transition-all duration-200 hover:scale-105 px-3 py-1.5 text-sm",
+                      "cursor-pointer transition-all duration-200 hover:scale-105 px-2.5 py-1 text-sm",
                       selectedCategories.includes(category) 
                         ? "shadow-sm ring-1 ring-primary/20" 
                         : "hover:border-primary/50"
@@ -219,7 +219,7 @@ export function CreatePromptDialog({
                 onChange={(e) => setNewCategory(e.target.value)}
                 placeholder="Add custom category"
                 onKeyDown={(e) => e.key === "Enter" && addNewCategory()}
-                className="flex-1 h-10"
+                className="flex-1 h-8"
               />
               <Button
                 type="button"
@@ -227,7 +227,7 @@ export function CreatePromptDialog({
                 variant="outline"
                 size="sm"
                 disabled={!newCategory.trim()}
-                className="h-10 px-4"
+                className="h-8 px-3"
               >
                 Add
               </Button>
@@ -235,9 +235,9 @@ export function CreatePromptDialog({
           </div>
 
           {/* Tags */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <Label className="text-sm font-semibold text-foreground">Tags</Label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {availableTags
                 .filter(tag => tag !== "ALL")
                 .map((tag) => (
@@ -245,7 +245,7 @@ export function CreatePromptDialog({
                     key={tag}
                     variant={selectedTags.includes(tag) ? "default" : "outline"}
                     className={cn(
-                      "cursor-pointer transition-all duration-200 hover:scale-105 px-3 py-1.5 text-sm",
+                      "cursor-pointer transition-all duration-200 hover:scale-105 px-2.5 py-1 text-sm",
                       selectedTags.includes(tag) 
                         ? "shadow-sm ring-1 ring-primary/20" 
                         : "hover:border-primary/50"
@@ -262,7 +262,7 @@ export function CreatePromptDialog({
                 onChange={(e) => setNewTag(e.target.value)}
                 placeholder="Add custom tag"
                 onKeyDown={(e) => e.key === "Enter" && addNewTag()}
-                className="flex-1 h-10"
+                className="flex-1 h-8"
               />
               <Button
                 type="button"
@@ -270,7 +270,7 @@ export function CreatePromptDialog({
                 variant="outline"
                 size="sm"
                 disabled={!newTag.trim()}
-                className="h-10 px-4"
+                className="h-8 px-3"
               >
                 Add
               </Button>
@@ -279,14 +279,14 @@ export function CreatePromptDialog({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 pt-6 border-t border-border">
-          <Button variant="outline" onClick={handleClose} className="h-10 px-6">
+        <div className="flex justify-end gap-2 pt-4 border-t border-border">
+          <Button variant="outline" onClick={handleClose} className="h-8 px-5">
             Cancel
           </Button>
           <Button 
             onClick={handleSave} 
             disabled={!title.trim()}
-            className="h-10 px-6 bg-primary hover:bg-primary/90"
+            className="h-8 px-5 bg-primary hover:bg-primary/90"
           >
             {editingPrompt ? "Update Prompt" : "Create Prompt"}
           </Button>
