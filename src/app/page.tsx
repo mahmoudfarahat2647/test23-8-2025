@@ -7,7 +7,9 @@ import { Filters } from '@/components/Filters';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Header } from '@/components/Header';
 import { PromptCard } from '@/components/PromptCard';
+import { Sidebar } from '@/components/Sidebar';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import type {
   CategoryType,
   PromptBoxData,
@@ -129,6 +131,7 @@ export default function PromptBox() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<PromptCardType | null>(null);
   const [deletingCard, setDeletingCard] = useState<PromptCardType | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const handleCategoryToggle = (category: CategoryType) => {
     if (category === 'ALL') {
@@ -393,7 +396,7 @@ export default function PromptBox() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-subtle relative overflow-hidden flex">
       {/* Enhanced background with floating elements */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/20" />
       <div className="absolute top-0 left-1/4 w-64 h-64 bg-primary/5 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" />
@@ -406,132 +409,123 @@ export default function PromptBox() {
         style={{ animationDelay: '4s' }}
       />
 
-      <div className="relative z-10">
-        <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 max-w-6xl">
-          {/* Enhanced Header */}
-          <div className="animate-fade-in">
-            <Header
-              config={promptBoxData.header}
-              searchValue={searchValue}
-              onSearchChange={setSearchValue}
-            />
-          </div>
+      {/* Sidebar */}
+      <div className="relative z-20">
+        <Sidebar
+          categories={promptBoxData.filters.categories}
+          tags={promptBoxData.filters.tags}
+          prompts={promptBoxData.promptCards}
+          activeCategories={activeCategories}
+          activeTags={activeTags}
+          onCategoryToggle={handleCategoryToggle}
+          onTagToggle={handleTagToggle}
+          onCategoryDelete={handleCategoryDelete}
+          onTagDelete={handleTagDelete}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        />
+      </div>
 
-          {/* Enhanced Filters */}
-          <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            <Filters
-              categories={promptBoxData.filters.categories}
-              tags={promptBoxData.filters.tags}
-              activeCategories={activeCategories}
-              activeTags={activeTags}
-              onCategoryToggle={handleCategoryToggle}
-              onTagToggle={handleTagToggle}
-              onCategoryDelete={handleCategoryDelete}
-              onTagDelete={handleTagDelete}
-            />
-          </div>
-
-          {/* Enhanced Results section */}
-          <div
-            className="mb-6 animate-slide-up"
-            style={{ animationDelay: '0.4s' }}
-          >
-            <div className="glass rounded-lg p-3 lg:p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-8 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
-                  <div>
-                    <p className="text-lg font-bold text-foreground">
-                      <span className="text-primary">
-                        {filteredCards.length}
-                      </span>{' '}
-                      {filteredCards.length === 1 ? 'Prompt' : 'Prompts'} Found
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Showing results from {promptBoxData.promptCards.length}{' '}
-                      total prompts
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xs text-muted-foreground uppercase tracking-widest font-semibold">
-                    Collection
-                  </div>
-                  <div className="text-2xl font-bold text-gradient-primary">
-                    {promptBoxData.promptCards.length}
-                  </div>
-                </div>
-              </div>
+      {/* Main Content */}
+      <div className="flex-1 relative z-10 overflow-hidden">
+        <div className="h-full overflow-y-auto">
+          <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 max-w-6xl">
+            {/* Enhanced Header */}
+            <div className="animate-fade-in">
+              <Header
+                config={promptBoxData.header}
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+                filteredCount={filteredCards.length}
+                totalCount={promptBoxData.promptCards.length}
+              />
             </div>
-          </div>
 
-          {/* Enhanced Prompt Cards Grid */}
-          {filteredCards.length > 0 ? (
-            <div
-              className="animate-scale-in"
-              style={{ animationDelay: '0.6s' }}
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 lg:gap-6 pb-16">
-                {filteredCards.map((card, index) => (
-                  <div
-                    key={`${card.title}-${card.description.slice(0, 50)}-${index}`}
-                    className="animate-fade-in hover-lift"
-                    style={{ animationDelay: `${0.8 + index * 0.1}s` }}
-                  >
-                    <PromptCard
-                      card={card}
-                      onEdit={handleEditPrompt}
-                      onDelete={handleDeletePrompt}
-                      onShare={handleSharePrompt}
-                      onCopy={handleCopyPrompt}
-                    />
-                  </div>
-                ))}
-              </div>
+            {/* Enhanced Filters - Only show on mobile or when sidebar is collapsed */}
+            <div className={cn(
+              "animate-slide-up lg:hidden",
+              isSidebarCollapsed && "lg:block"
+            )} style={{ animationDelay: '0.2s' }}>
+              <Filters
+                categories={promptBoxData.filters.categories}
+                tags={promptBoxData.filters.tags}
+                activeCategories={activeCategories}
+                activeTags={activeTags}
+                onCategoryToggle={handleCategoryToggle}
+                onTagToggle={handleTagToggle}
+                onCategoryDelete={handleCategoryDelete}
+                onTagDelete={handleTagDelete}
+              />
             </div>
-          ) : (
-            <div className="animate-fade-in" style={{ animationDelay: '0.6s' }}>
-              <div className="flex flex-col items-center justify-center py-14 text-center relative">
-                {/* Enhanced empty state */}
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/10 rounded-full blur-2xl" />
-                  <div className="relative glass rounded-xl p-6 backdrop-blur-md">
-                    <div className="rounded-full bg-gradient-to-br from-primary/20 to-primary/10 p-4 mb-4 inline-block">
-                      <svg
-                        className="h-8 w-8 text-primary"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        aria-label="No prompts found icon"
-                        role="img"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-bold text-foreground mb-2">
-                      No prompts found
-                    </h3>
-                    <p className="text-muted-foreground text-sm max-w-sm leading-relaxed mb-4">
-                      Try adjusting your search criteria or create a new prompt
-                      to get started on your AI journey.
-                    </p>
-                    <Button
-                      onClick={handleCreatePrompt}
-                      className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                      size="lg"
+
+            {/* Enhanced Prompt Cards Grid */}
+            {filteredCards.length > 0 ? (
+              <div
+                className="animate-scale-in"
+                style={{ animationDelay: '0.6s' }}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 lg:gap-6 pb-16">
+                  {filteredCards.map((card, index) => (
+                    <div
+                      key={`${card.title}-${card.description.slice(0, 50)}-${index}`}
+                      className="animate-fade-in hover-lift"
+                      style={{ animationDelay: `${0.8 + index * 0.1}s` }}
                     >
-                      Create Your First Prompt
-                    </Button>
+                      <PromptCard
+                        card={card}
+                        onEdit={handleEditPrompt}
+                        onDelete={handleDeletePrompt}
+                        onShare={handleSharePrompt}
+                        onCopy={handleCopyPrompt}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="animate-fade-in" style={{ animationDelay: '0.6s' }}>
+                <div className="flex flex-col items-center justify-center py-14 text-center relative">
+                  {/* Enhanced empty state */}
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/10 rounded-full blur-2xl" />
+                    <div className="relative glass rounded-xl p-6 backdrop-blur-md">
+                      <div className="rounded-full bg-gradient-to-br from-primary/20 to-primary/10 p-4 mb-4 inline-block">
+                        <svg
+                          className="h-8 w-8 text-primary"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          aria-label="No prompts found icon"
+                          role="img"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={1.5}
+                            d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-bold text-foreground mb-2">
+                        No prompts found
+                      </h3>
+                      <p className="text-muted-foreground text-sm max-w-sm leading-relaxed mb-4">
+                        Try adjusting your search criteria or create a new prompt
+                        to get started on your AI journey.
+                      </p>
+                      <Button
+                        onClick={handleCreatePrompt}
+                        className="bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                        size="lg"
+                      >
+                        Create Your First Prompt
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

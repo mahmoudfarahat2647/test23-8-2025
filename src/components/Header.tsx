@@ -10,9 +10,11 @@ interface HeaderProps {
   config: HeaderConfig;
   searchValue: string;
   onSearchChange: (value: string) => void;
+  filteredCount: number;
+  totalCount: number;
 }
 
-export function Header({ config, searchValue, onSearchChange }: HeaderProps) {
+export function Header({ config, searchValue, onSearchChange, filteredCount, totalCount }: HeaderProps) {
   return (
     <header className="mb-6 lg:mb-8">
       {/* Background gradient overlay */}
@@ -23,14 +25,22 @@ export function Header({ config, searchValue, onSearchChange }: HeaderProps) {
           {/* Title section with enhanced typography */}
           <div className="space-y-2 animate-fade-in">
             <div className="space-y-2">
-              <h1 className="text-2xl lg:text-3xl font-bold tracking-tight bg-gradient-to-r from-primary to-[#d97757]/30 bg-clip-text text-transparent">
-                {config.title}
-              </h1>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-8 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
+                <div>
+                  <p className="text-lg font-bold text-foreground">
+                    <span className="text-primary">
+                      {filteredCount}
+                    </span>{' '}
+                    {filteredCount === 1 ? 'Prompt' : 'Prompts'} Found
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Showing results from {totalCount} total prompts
+                  </p>
+                </div>
+              </div>
               <div className="w-12 h-1 bg-gradient-to-r from-primary to-primary/50 rounded-full" />
             </div>
-            <p className="text-sm lg:text-base text-muted-foreground max-w-lg leading-relaxed font-medium">
-              Discover, organize, and manage your AI prompts with ease
-            </p>
           </div>
 
           {/* Enhanced search and actions section */}
