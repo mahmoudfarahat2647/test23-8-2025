@@ -1,0 +1,10 @@
+node_modules
+dist
+build
+coverage
+.next
+*.min.js
+*.d.ts
+# Tailwind CSS files with custom at-rules
+src/app/globals.css
+*.css
