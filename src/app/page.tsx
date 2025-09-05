@@ -136,6 +136,7 @@ export default function PromptBox() {
   const handleCategoryToggle = (category: CategoryType) => {
     if (category === 'ALL') {
       setActiveCategories(['ALL']);
+      setActiveTags(['ALL']); // Reset tags when ALL category is selected
     } else {
       setActiveCategories((prev) => {
         const filtered = prev.filter((c) => c !== 'ALL');
@@ -396,7 +397,7 @@ export default function PromptBox() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-subtle relative overflow-hidden flex">
+    <div className="min-h-screen bg-gradient-subtle relative overflow-hidden flex h-screen">
       {/* Enhanced background with floating elements */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted/20" />
       <div className="absolute top-0 left-1/4 w-64 h-64 bg-primary/5 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-float" />
@@ -427,8 +428,9 @@ export default function PromptBox() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 relative z-10 overflow-hidden">
-        <div className="h-full overflow-y-auto">
+      <div className="flex-1 relative z-10 overflow-hidden flex flex-col h-full">
+        {/* Fixed Header */}
+        <div className="flex-none">
           <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 max-w-6xl">
             {/* Enhanced Header */}
             <div className="animate-fade-in">
@@ -457,6 +459,12 @@ export default function PromptBox() {
                 onTagDelete={handleTagDelete}
               />
             </div>
+          </div>
+        </div>
+
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto scrollbar-thin">
+          <div className="container mx-auto px-3 sm:px-4 lg:px-6 pb-16 max-w-6xl">
 
             {/* Enhanced Prompt Cards Grid */}
             {filteredCards.length > 0 ? (

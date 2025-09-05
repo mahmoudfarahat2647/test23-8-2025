@@ -114,7 +114,7 @@ export function Sidebar({
     // Add tags based on prompts
     prompts.forEach(prompt => {
       prompt.categories.forEach(category => {
-        if (map.has(category)) {
+        if (map.has(category) && category !== 'ALL') { // Don't add tags to ALL category
           prompt.tags.forEach(tag => {
             if (tag !== 'ALL') {
               map.get(category)!.add(tag);
@@ -124,19 +124,20 @@ export function Sidebar({
       });
     });
 
-    // Add all tags to 'ALL' category
+    // Keep ALL category empty - it's just a reset button
     if (map.has('ALL')) {
-      tags.forEach(tag => {
-        if (tag !== 'ALL') {
-          map.get('ALL')!.add(tag);
-        }
-      });
+      map.set('ALL', new Set());
     }
 
     return map;
   }, [categories, tags, prompts]);
 
   const toggleCategory = (category: string) => {
+    // Special handling for ALL - reset all filters
+    if (category === 'ALL') {
+      return; // ALL doesn't expand/collapse, it's just a reset button
+    }
+    
     const newExpanded = new Set(expandedCategories);
     if (newExpanded.has(category)) {
       newExpanded.delete(category);
@@ -180,7 +181,7 @@ export function Sidebar({
 
   return (
     <>
-      <div className="w-64 bg-card/50 backdrop-blur-sm border-r border-border/50 flex flex-col h-full">
+      <div className="w-56 bg-card/50 backdrop-blur-sm border-r border-border/50 flex flex-col h-full">
         {/* Header */}
         <div className="p-4 border-b border-border/50">
           <div className="flex items-center justify-between">
@@ -214,12 +215,28 @@ export function Sidebar({
               <div key={category} className="space-y-1">
                 {/* Category Item */}
                 <div className="group relative">
-                  <div
-                    className={cn(
-                      'flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all duration-200 hover:bg-primary/5',
-                      isActive && 'bg-primary/10 border border-primary/20'
-                    )}
-                  >
+                  {category === 'ALL' ? (
+                    // Special styling for ALL button - compact reset button
+                    <div
+                      className={cn(
+                        'flex items-center justify-center px-3 py-2 rounded-lg cursor-pointer transition-all duration-200',
+                        'bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50',
+                        isActive && 'bg-primary/20 border-primary/50 shadow-sm'
+                      )}
+                      onClick={() => onCategoryToggle(category)}
+                    >
+                      <span className="text-sm font-bold text-primary">
+                        {category}
+                      </span>
+                    </div>
+                  ) : (
+                    // Regular category styling
+                    <div
+                      className={cn(
+                        'flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all duration-200 hover:bg-primary/5',
+                        isActive && 'bg-primary/10 border border-primary/20'
+                      )}
+                    >
                     <Button
                       variant="ghost"
                       size="icon"
@@ -250,8 +267,7 @@ export function Sidebar({
                       <span
                         className={cn(
                           'text-sm font-medium',
-                          isActive ? 'text-primary' : 'text-foreground',
-                          category === 'ALL' && 'font-bold'
+                          isActive ? 'text-primary' : 'text-foreground'
                         )}
                       >
                         {category}
@@ -279,6 +295,7 @@ export function Sidebar({
                       </Button>
                     )}
                   </div>
+                  )}
                 </div>
 
                 {/* Tags for this category */}

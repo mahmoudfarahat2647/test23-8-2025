@@ -60,15 +60,19 @@ export function PromptCard({
   const hasContent = card.title || card.description;
 
   return (
-    <Card className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border-border/30 glass-card hover-lift animate-fade-in">
+    <Card className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border-border/20 glass-card hover-lift animate-fade-in bg-card/90 backdrop-blur-md hover:border-primary/30 hover:shadow-primary/10">
       {/* Enhanced background gradients */}
       <div className="absolute inset-0 bg-gradient-card opacity-50" />
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-all duration-500" />
+      
+      {/* Subtle border glow effect */}
+      <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-0 group-hover:opacity-50 transition-all duration-500 blur-sm" />
+      <div className="absolute inset-[1px] rounded-lg bg-card/95 backdrop-blur-md" />
 
       {/* Floating decoration */}
       <div className="absolute -top-4 -right-4 w-14 h-14 bg-primary/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 animate-float" />
 
-      <div className="relative z-10">
+      <div className="relative z-20">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0 space-y-2">
