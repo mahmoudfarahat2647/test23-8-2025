@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, Edit, Share2, Star, Trash2 } from 'lucide-react';
+import { Copy, Edit, Star, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -60,23 +60,26 @@ export function PromptCard({
   const hasContent = card.title || card.description;
 
   return (
-    <Card className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border-border/20 glass-card hover-lift animate-fade-in bg-card/90 backdrop-blur-md hover:border-primary/30 hover:shadow-primary/10">
+    <Card className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border-border/20 glass-card hover-lift animate-fade-in bg-card/90 backdrop-blur-md hover:border-primary/30 hover:shadow-primary/10 dark:border-gradient-gray">
       {/* Enhanced background gradients */}
       <div className="absolute inset-0 bg-gradient-card opacity-50" />
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-all duration-500" />
       
       {/* Subtle border glow effect */}
       <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-0 group-hover:opacity-50 transition-all duration-500 blur-sm" />
+      
+      {/* Dark theme gradient border */}
+      <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-gray-600/30 via-gray-500/20 to-gray-700/30 dark:opacity-100 opacity-0 pointer-events-none" />
       <div className="absolute inset-[1px] rounded-lg bg-card/95 backdrop-blur-md" />
 
       {/* Floating decoration */}
       <div className="absolute -top-4 -right-4 w-14 h-14 bg-primary/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 animate-float" />
 
       <div className="relative z-20">
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0 space-y-2">
-              <CardTitle className="text-base font-bold text-foreground line-clamp-2 mb-0 leading-tight group-hover:text-primary transition-colors duration-300">
+        <CardHeader className="pb-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0 space-y-1">
+              <CardTitle className="text-sm font-bold text-foreground line-clamp-2 mb-0 leading-tight group-hover:text-primary transition-colors duration-300">
                 {card.title || 'Untitled Prompt'}
               </CardTitle>
               {card.rating > 0 && (
@@ -87,34 +90,23 @@ export function PromptCard({
             </div>
 
             {/* Enhanced action buttons */}
-            <div className="flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-105">
+            <div className="flex items-center gap-0.5 opacity-50 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-105">
               {card.actions.edit && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 hover:bg-primary/10 hover:text-primary hover:scale-110 transition-all duration-200 hover-glow"
+                  className="h-6 w-6 hover:bg-primary/10 hover:text-primary hover:scale-110 transition-all duration-200 hover-glow"
                   onClick={() => onEdit?.(card)}
                   title="Edit prompt"
                 >
                   <Edit className="h-3 w-3" />
                 </Button>
               )}
-              {card.actions.share && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-blue-950/50 hover:scale-110 transition-all duration-200 hover-glow"
-                  onClick={() => onShare?.(card)}
-                  title="Share prompt"
-                >
-                  <Share2 className="h-3 w-3" />
-                </Button>
-              )}
               {card.actions.copy && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-950/50 hover:scale-110 transition-all duration-200 hover-glow"
+                  className="h-6 w-6 hover:bg-green-50 hover:text-green-600 dark:hover:bg-green-950/50 hover:scale-110 transition-all duration-200 hover-glow"
                   onClick={() => onCopy?.(card)}
                   title="Copy prompt"
                 >
@@ -125,7 +117,7 @@ export function PromptCard({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive hover:scale-110 transition-all duration-200 hover-glow"
+                  className="h-6 w-6 hover:bg-destructive/10 hover:text-destructive hover:scale-110 transition-all duration-200 hover-glow"
                   onClick={() => onDelete?.(card)}
                   title="Delete prompt"
                 >
@@ -137,17 +129,17 @@ export function PromptCard({
         </CardHeader>
 
         {(card.description || !hasContent) && (
-          <CardContent className="pb-3">
-            <p className="text-muted-foreground text-sm line-clamp-3 leading-relaxed group-hover:text-foreground/80 transition-colors duration-300">
+          <CardContent className="pb-2">
+            <p className="text-muted-foreground text-xs line-clamp-2 leading-relaxed group-hover:text-foreground/80 transition-colors duration-300">
               {card.description || 'No description available'}
             </p>
           </CardContent>
         )}
 
         {(card.categories.length > 0 || card.tags.length > 0) && (
-          <CardFooter className="pt-0 pb-4 flex-col items-start gap-3">
+          <CardFooter className="pt-0 pb-3 flex-col items-start gap-2">
             {card.categories.length > 0 && (
-              <div className="w-full space-y-2">
+              <div className="w-full space-y-1">
                 <div className="text-xs font-bold text-muted-foreground/80 uppercase tracking-widest">
                   Categories
                 </div>
@@ -159,7 +151,7 @@ export function PromptCard({
                       <Badge
                         key={uniqueKey}
                         variant="secondary"
-                        className="text-xs px-2 py-1 font-semibold hover:scale-105 transition-transform duration-200 bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                        className="text-xs px-1.5 py-0.5 font-semibold hover:scale-105 transition-transform duration-200 bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-600 dark:text-blue-400 border-blue-300/40 hover:from-blue-500/30 hover:to-purple-500/30 hover:border-blue-400/60 shadow-sm"
                       >
                         {category}
                       </Badge>
@@ -170,7 +162,7 @@ export function PromptCard({
             )}
 
             {card.tags.length > 0 && (
-              <div className="w-full space-y-2">
+              <div className="w-full space-y-1">
                 <div className="text-xs font-bold text-muted-foreground/80 uppercase tracking-widest">
                   Tags
                 </div>
@@ -182,7 +174,7 @@ export function PromptCard({
                       <Badge
                         key={uniqueKey}
                         variant="outline"
-                        className="text-xs px-2 py-1 hover:scale-105 transition-all duration-200 border-muted-foreground/30 hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
+                        className="text-xs px-1.5 py-0.5 hover:scale-105 transition-all duration-200 bg-gradient-to-r from-cyan-400/10 to-teal-500/10 border-cyan-400/40 text-cyan-600 dark:text-cyan-400 hover:from-cyan-400/20 hover:to-teal-500/20 hover:border-cyan-500/60 hover:text-cyan-700 dark:hover:text-cyan-300 shadow-sm"
                       >
                         {tag}
                       </Badge>

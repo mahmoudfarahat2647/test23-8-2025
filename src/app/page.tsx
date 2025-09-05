@@ -472,7 +472,7 @@ export default function PromptBox() {
                 className="animate-scale-in"
                 style={{ animationDelay: '0.6s' }}
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 lg:gap-6 pb-16">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 lg:gap-6 pt-4 pb-16">
                   {filteredCards.map((card, index) => (
                     <div
                       key={`${card.title}-${card.description.slice(0, 50)}-${index}`}
