@@ -43,7 +43,8 @@ function DeleteConfirmationDialog({
             Delete {itemType === 'category' ? 'Category' : 'Tag'}
           </DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete the {itemType} &ldquo;{itemName}&rdquo;?
+            Are you sure you want to delete the {itemType} &ldquo;{itemName}
+            &rdquo;?
             {itemType === 'category'
               ? ' This will remove the category from all prompts.'
               : ' This will remove the tag from all prompts.'}
@@ -68,7 +69,6 @@ function DeleteConfirmationDialog({
 
 interface SidebarProps {
   categories: CategoryType[];
-  tags: TagType[];
   prompts: PromptCard[];
   activeCategories: CategoryType[];
   activeTags: TagType[];
@@ -82,7 +82,6 @@ interface SidebarProps {
 
 export function Sidebar({
   categories,
-  tags,
   prompts,
   activeCategories,
   activeTags,
@@ -94,7 +93,7 @@ export function Sidebar({
   onToggleCollapse,
 }: SidebarProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(['ALL'])
+    new Set(['ALL']),
   );
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
@@ -105,24 +104,25 @@ export function Sidebar({
   // Calculate tags for each category based on actual prompts
   const categoryTagsMap = useMemo(() => {
     const map = new Map<string, Set<string>>();
-    
+
     // Initialize with empty sets
-    categories.forEach(category => {
+    for (const category of categories) {
       map.set(category, new Set());
-    });
+    }
 
     // Add tags based on prompts
-    prompts.forEach(prompt => {
-      prompt.categories.forEach(category => {
-        if (map.has(category) && category !== 'ALL') { // Don't add tags to ALL category
-          prompt.tags.forEach(tag => {
+    for (const prompt of prompts) {
+      for (const category of prompt.categories) {
+        if (map.has(category) && category !== 'ALL') {
+          // Don't add tags to ALL category
+          for (const tag of prompt.tags) {
             if (tag !== 'ALL') {
-              map.get(category)!.add(tag);
+              map.get(category)?.add(tag);
             }
-          });
+          }
         }
-      });
-    });
+      }
+    }
 
     // Keep ALL category empty - it's just a reset button
     if (map.has('ALL')) {
@@ -130,14 +130,14 @@ export function Sidebar({
     }
 
     return map;
-  }, [categories, tags, prompts]);
+  }, [categories, prompts]);
 
   const toggleCategory = (category: string) => {
     // Special handling for ALL - reset all filters
     if (category === 'ALL') {
       return; // ALL doesn't expand/collapse, it's just a reset button
     }
-    
+
     const newExpanded = new Set(expandedCategories);
     if (newExpanded.has(category)) {
       newExpanded.delete(category);
@@ -147,7 +147,10 @@ export function Sidebar({
     setExpandedCategories(newExpanded);
   };
 
-  const handleDeleteClick = (itemName: string, itemType: 'category' | 'tag') => {
+  const handleDeleteClick = (
+    itemName: string,
+    itemType: 'category' | 'tag',
+  ) => {
     setDeleteDialog({ isOpen: true, itemName, itemType });
   };
 
@@ -187,7 +190,9 @@ export function Sidebar({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Folder className="h-5 w-5 text-primary" />
-              <h2 className="font-bold tracking-tight bg-gradient-to-r from-primary to-[#d97757]/30 bg-clip-text text-transparent">PROMPTBOX</h2>
+              <h2 className="font-bold tracking-tight bg-gradient-to-r from-primary to-[#d97757]/30 bg-clip-text text-transparent">
+                PROMPTBOX
+              </h2>
             </div>
             {onToggleCollapse && (
               <Button
@@ -208,7 +213,9 @@ export function Sidebar({
           {categories.map((category) => {
             const isExpanded = expandedCategories.has(category);
             const isActive = activeCategories.includes(category);
-            const categoryTags = Array.from(categoryTagsMap.get(category) || []);
+            const categoryTags = Array.from(
+              categoryTagsMap.get(category) || [],
+            );
             const canDelete = category !== 'ALL' && onCategoryDelete;
 
             return (
@@ -217,84 +224,86 @@ export function Sidebar({
                 <div className="group relative">
                   {category === 'ALL' ? (
                     // Special styling for ALL button - compact reset button
-                    <div
+                    <button
+                      type="button"
                       className={cn(
                         'flex items-center justify-center px-3 py-2 rounded-lg cursor-pointer transition-all duration-200',
                         'bg-primary/10 hover:bg-primary/20 border border-primary/30 hover:border-primary/50',
-                        isActive && 'bg-primary/20 border-primary/50 shadow-sm'
+                        isActive && 'bg-primary/20 border-primary/50 shadow-sm',
                       )}
                       onClick={() => onCategoryToggle(category)}
                     >
                       <span className="text-sm font-bold text-primary">
                         {category}
                       </span>
-                    </div>
+                    </button>
                   ) : (
                     // Regular category styling
                     <div
                       className={cn(
                         'flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all duration-200 hover:bg-primary/5',
-                        isActive && 'bg-primary/10 border border-primary/20'
+                        isActive && 'bg-primary/10 border border-primary/20',
                       )}
                     >
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => toggleCategory(category)}
-                      className="h-4 w-4 p-0 hover:bg-transparent"
-                    >
-                      {categoryTags.length > 0 ? (
-                        isExpanded ? (
-                          <ChevronDown className="h-3 w-3" />
-                        ) : (
-                          <ChevronRight className="h-3 w-3" />
-                        )
-                      ) : (
-                        <div className="w-3 h-3" />
-                      )}
-                    </Button>
-
-                    <div
-                      className="flex-1 flex items-center gap-2"
-                      onClick={() => onCategoryToggle(category)}
-                    >
-                      <Folder
-                        className={cn(
-                          'h-4 w-4',
-                          isActive ? 'text-primary' : 'text-muted-foreground'
-                        )}
-                      />
-                      <span
-                        className={cn(
-                          'text-sm font-medium',
-                          isActive ? 'text-primary' : 'text-foreground'
-                        )}
-                      >
-                        {category}
-                      </span>
-                      <Badge
-                        variant="secondary"
-                        className="ml-auto text-xs bg-muted text-muted-foreground"
-                      >
-                        {categoryTags.length}
-                      </Badge>
-                    </div>
-
-                    {canDelete && (
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteClick(category, 'category');
-                        }}
-                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
-                        title={`Delete ${category}`}
+                        onClick={() => toggleCategory(category)}
+                        className="h-4 w-4 p-0 hover:bg-transparent"
                       >
-                        <X className="h-3 w-3" />
+                        {categoryTags.length > 0 ? (
+                          isExpanded ? (
+                            <ChevronDown className="h-3 w-3" />
+                          ) : (
+                            <ChevronRight className="h-3 w-3" />
+                          )
+                        ) : (
+                          <div className="w-3 h-3" />
+                        )}
                       </Button>
-                    )}
-                  </div>
+
+                      <button
+                        type="button"
+                        className="flex-1 flex items-center gap-2"
+                        onClick={() => onCategoryToggle(category)}
+                      >
+                        <Folder
+                          className={cn(
+                            'h-4 w-4',
+                            isActive ? 'text-primary' : 'text-muted-foreground',
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            'text-sm font-medium',
+                            isActive ? 'text-primary' : 'text-foreground',
+                          )}
+                        >
+                          {category}
+                        </span>
+                        <Badge
+                          variant="secondary"
+                          className="ml-auto text-xs bg-muted text-muted-foreground"
+                        >
+                          {categoryTags.length}
+                        </Badge>
+                      </button>
+
+                      {canDelete && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClick(category, 'category');
+                          }}
+                          className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
+                          title={`Delete ${category}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -306,24 +315,32 @@ export function Sidebar({
                       const canDeleteTag = onTagDelete;
 
                       return (
-                        <div key={`${category}-${tag}`} className="group relative">
-                          <div
+                        <div
+                          key={`${category}-${tag}`}
+                          className="group relative"
+                        >
+                          <button
+                            type="button"
                             className={cn(
                               'flex items-center gap-2 p-1.5 rounded-md cursor-pointer transition-all duration-200 hover:bg-primary/5',
-                              isTagActive && 'bg-primary/10'
+                              isTagActive && 'bg-primary/10',
                             )}
                             onClick={() => onTagToggle(tag)}
                           >
                             <Tag
                               className={cn(
                                 'h-3 w-3',
-                                isTagActive ? 'text-primary' : 'text-muted-foreground'
+                                isTagActive
+                                  ? 'text-primary'
+                                  : 'text-muted-foreground',
                               )}
                             />
                             <span
                               className={cn(
                                 'text-xs',
-                                isTagActive ? 'text-primary font-medium' : 'text-muted-foreground'
+                                isTagActive
+                                  ? 'text-primary font-medium'
+                                  : 'text-muted-foreground',
                               )}
                             >
                               {tag}
@@ -343,7 +360,7 @@ export function Sidebar({
                                 <X className="h-3 w-3" />
                               </Button>
                             )}
-                          </div>
+                          </button>
                         </div>
                       );
                     })}

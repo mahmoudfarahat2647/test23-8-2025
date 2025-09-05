@@ -17,7 +17,6 @@ interface PromptCardProps {
   card: PromptCardType;
   onEdit?: (card: PromptCardType) => void;
   onDelete?: (card: PromptCardType) => void;
-  onShare?: (card: PromptCardType) => void;
   onCopy?: (card: PromptCardType) => void;
 }
 
@@ -54,7 +53,6 @@ export function PromptCard({
   card,
   onEdit,
   onDelete,
-  onShare,
   onCopy,
 }: PromptCardProps) {
   const hasContent = card.title || card.description;
@@ -64,10 +62,10 @@ export function PromptCard({
       {/* Enhanced background gradients */}
       <div className="absolute inset-0 bg-gradient-card opacity-50" />
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-all duration-500" />
-      
+
       {/* Subtle border glow effect */}
       <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-0 group-hover:opacity-50 transition-all duration-500 blur-sm" />
-      
+
       {/* Dark theme gradient border */}
       <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-gray-600/30 via-gray-500/20 to-gray-700/30 dark:opacity-100 opacity-0 pointer-events-none" />
       <div className="absolute inset-[1px] rounded-lg bg-card/95 backdrop-blur-md" />
