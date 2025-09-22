@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, Eye, EyeOff, Plus, Save, Star, Trash2, X } from 'lucide-react';
+import { ChevronDown, Copy, Download, Eye, EyeOff, FileText, Plus, Save, Star, Trash2, X, RotateCcw } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,16 +14,42 @@ interface PromptEditorProps {
   mode: 'create' | 'edit';
   onSave: (prompt: PromptCard) => void;
   onCancel: () => void;
+  showSidebar?: boolean;
+  onToggleSidebar?: () => void;
 }
 
-export function PromptEditor({ prompt, mode, onSave, onCancel }: PromptEditorProps) {
+export function PromptEditor({ prompt, mode, onSave, onCancel, showSidebar: externalShowSidebar, onToggleSidebar }: PromptEditorProps) {
   const [title, setTitle] = useState(prompt.title || '');
   const [description, setDescription] = useState(prompt.description || '');
   const [content, setContent] = useState(prompt.content || '');
+  const [exampleContent, setExampleContent] = useState(prompt.exampleContent || '');
   const [rating, setRating] = useState(prompt.rating || 0);
   const [categories, setCategories] = useState<string[]>(prompt.categories || []);
   const [tags, setTags] = useState<string[]>(prompt.tags || []);
   const [showPreview, setShowPreview] = useState(false);
+  const [showExample, setShowExample] = useState(false);
+  const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(externalShowSidebar ?? true); // Default to show sidebar
+  // Store original content for reset functionality
+  const [originalContent, setOriginalContent] = useState(prompt.content || '');
+  const [originalExampleContent, setOriginalExampleContent] = useState(prompt.exampleContent || '');
+  
+  // Update original content when prompt changes (e.g., when switching between prompts)
+  useEffect(() => {
+    setOriginalContent(prompt.content || '');
+    setOriginalExampleContent(prompt.exampleContent || '');
+  }, [prompt]);
+  
+  // Handle external sidebar control
+  const handleToggleSidebar = () => {
+    if (onToggleSidebar) {
+      onToggleSidebar();
+    } else {
+      setShowSidebar(!showSidebar);
+    }
+  };
+  
+  const sidebarVisible = externalShowSidebar ?? showSidebar;
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [showTagDropdown, setShowTagDropdown] = useState(false);
   const [showCategoryInput, setShowCategoryInput] = useState(false);
@@ -118,7 +144,9 @@ export function PromptEditor({ prompt, mode, onSave, onCancel }: PromptEditorPro
     }
   };
 
-  // Close dropdowns when clicking outside
+  // Close download dropdown when clicking outside
+  const downloadDropdownRef = useRef<HTMLDivElement>(null);
+  
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
@@ -130,6 +158,9 @@ export function PromptEditor({ prompt, mode, onSave, onCancel }: PromptEditorPro
         setShowTagDropdown(false);
         setShowTagInput(false);
         setNewTagInput('');
+      }
+      if (downloadDropdownRef.current && !downloadDropdownRef.current.contains(event.target as Node)) {
+        setShowDownloadDropdown(false);
       }
     };
 
@@ -149,6 +180,7 @@ export function PromptEditor({ prompt, mode, onSave, onCancel }: PromptEditorPro
       title: title.trim(),
       description: description.trim(),
       content: content.trim(),
+      exampleContent: exampleContent.trim(),
       rating,
       categories,
       tags,
@@ -157,7 +189,322 @@ export function PromptEditor({ prompt, mode, onSave, onCancel }: PromptEditorPro
     onSave(updatedPrompt);
   };
 
-  // Simple markdown to HTML converter for preview
+  // Download functionality
+  const handleDownload = (format: 'md' | 'docx' | 'pdf') => {
+    const downloadContent = `# ${title || 'Untitled Prompt'}
+
+## Description
+${description}
+
+## Content
+${content}
+
+## Example Usage
+${exampleContent}
+
+## Metadata
+- Rating: ${rating}/5
+- Categories: ${categories.join(', ') || 'None'}
+- Tags: ${tags.join(', ') || 'None'}`;
+    
+    const filename = `${(title || 'prompt').replace(/[^a-z0-9]/gi, '_').toLowerCase()}`;
+    
+    if (format === 'md') {
+      const blob = new Blob([downloadContent], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${filename}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else if (format === 'docx') {
+      // For Word format, we'll create a simple HTML structure that can be opened by Word
+      const htmlContent = `
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>${title || 'Untitled Prompt'}</title>
+          </head>
+          <body>
+            <h1>${title || 'Untitled Prompt'}</h1>
+            <h2>Description</h2>
+            <p>${description}</p>
+            <h2>Content</h2>
+            <pre>${content}</pre>
+            <h2>Example Usage</h2>
+            <pre>${exampleContent}</pre>
+            <h2>Metadata</h2>
+            <ul>
+              <li>Rating: ${rating}/5</li>
+              <li>Categories: ${categories.join(', ') || 'None'}</li>
+              <li>Tags: ${tags.join(', ') || 'None'}</li>
+            </ul>
+          </body>
+        </html>
+      `;
+      const blob = new Blob([htmlContent], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${filename}.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else if (format === 'pdf') {
+      // For PDF, we'll create HTML and let the browser handle it
+      const htmlContent = `
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <title>${title || 'Untitled Prompt'}</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 40px; }
+              h1, h2 { color: #333; }
+              pre { background: #f5f5f5; padding: 10px; border-radius: 4px; }
+            </style>
+          </head>
+          <body>
+            <h1>${title || 'Untitled Prompt'}</h1>
+            <h2>Description</h2>
+            <p>${description}</p>
+            <h2>Content</h2>
+            <pre>${content}</pre>
+            <h2>Example Usage</h2>
+            <pre>${exampleContent}</pre>
+            <h2>Metadata</h2>
+            <ul>
+              <li>Rating: ${rating}/5</li>
+              <li>Categories: ${categories.join(', ') || 'None'}</li>
+              <li>Tags: ${tags.join(', ') || 'None'}</li>
+            </ul>
+          </body>
+        </html>
+      `;
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(htmlContent);
+        newWindow.document.close();
+        newWindow.print();
+      }
+    }
+    
+    setShowDownloadDropdown(false);
+  };
+
+  // Simple formatting functions
+  const formatAsMarkdown = (text: string) => {
+    if (!text.trim()) return text;
+    
+    // Basic markdown formatting - organize content with headers, lists, and code blocks
+    const lines = text.split('\n');
+    let formatted = '';
+    let inCodeBlock = false;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Handle code blocks
+      if (line.trim().startsWith('```')) {
+        inCodeBlock = !inCodeBlock;
+        formatted += line + '\n';
+        continue;
+      }
+      
+      // If we're in a code block, just add the line
+      if (inCodeBlock) {
+        formatted += line + '\n';
+        continue;
+      }
+      
+      // Skip empty lines at the beginning
+      if (!line.trim() && formatted === '') continue;
+      
+      // Add headers for common patterns (lines ending with :)
+      if (line.trim().endsWith(':') && line.trim().length < 50) {
+        formatted += `## ${line.trim()}\n`;
+      } 
+      // Format bullet points
+      else if (line.trim().startsWith('-') || line.trim().startsWith('*') || line.trim().startsWith('•')) {
+        formatted += line + '\n';
+      }
+      // Format numbered lists
+      else if (/^\s*\d+[\.\)]/.test(line)) {
+        formatted += line + '\n';
+      }
+      // Format as paragraph if it's a longer line
+      else if (line.trim().length > 0) {
+        // If we already have content, add a newline before the paragraph
+        if (formatted && !formatted.endsWith('\n\n') && !formatted.endsWith('## ')) {
+          formatted += '\n';
+        }
+        formatted += line + '\n';
+      }
+      
+      // Add spacing between sections
+      if (line.trim() === '' && i < lines.length - 1 && lines[i+1].trim() !== '') {
+        if (!formatted.endsWith('\n\n')) {
+          formatted += '\n';
+        }
+      }
+    }
+    
+    return formatted.trim();
+  };
+
+  const formatAsJSON = (text: string) => {
+    if (!text.trim()) return '{}';
+    
+    // Convert text to a structured JSON format
+    const lines = text.split('\n');
+    const result: any = {
+      content: []
+    };
+    
+    let currentBlock: any = null;
+    let inCodeBlock = false;
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      
+      // Skip empty lines
+      if (!trimmed && !currentBlock) continue;
+      
+      // Handle code blocks
+      if (trimmed.startsWith('```')) {
+        inCodeBlock = !inCodeBlock;
+        if (inCodeBlock) {
+          // Start a new code block
+          if (!currentBlock) {
+            currentBlock = { type: 'code', content: '' };
+          } else {
+            currentBlock.content += line + '\n';
+          }
+        } else {
+          // End code block
+          if (currentBlock) {
+            currentBlock.content += line + '\n';
+            result.content.push(currentBlock);
+            currentBlock = null;
+          }
+        }
+        continue;
+      }
+      
+      // If in code block, add to current block
+      if (inCodeBlock) {
+        if (currentBlock) {
+          currentBlock.content += line + '\n';
+        }
+        continue;
+      }
+      
+      // Detect section headers (lines ending with :)
+      if (trimmed.endsWith(':')) {
+        // Save previous block if exists
+        if (currentBlock) {
+          result.content.push(currentBlock);
+        }
+        // Start new section
+        currentBlock = { 
+          type: 'section', 
+          title: trimmed.slice(0, -1),
+          content: '' 
+        };
+        continue;
+      }
+      
+      // Detect list items
+      if (trimmed.startsWith('-') || trimmed.startsWith('*') || trimmed.startsWith('•') || /^\d+[\.\)]/.test(trimmed)) {
+        // Save previous block if it's not a list
+        if (currentBlock && currentBlock.type !== 'list') {
+          result.content.push(currentBlock);
+          currentBlock = null;
+        }
+        
+        // Start or continue list
+        if (!currentBlock) {
+          currentBlock = { type: 'list', items: [] };
+        }
+        
+        if (currentBlock.type === 'list') {
+          currentBlock.items.push(trimmed.replace(/^[\d\-\*\•\.\)]+\s*/, ''));
+        }
+        continue;
+      }
+      
+      // Regular paragraph
+      if (trimmed.length > 0) {
+        // Save previous block if it's not a paragraph
+        if (currentBlock && currentBlock.type !== 'paragraph') {
+          result.content.push(currentBlock);
+          currentBlock = null;
+        }
+        
+        // Start or continue paragraph
+        if (!currentBlock) {
+          currentBlock = { type: 'paragraph', content: trimmed };
+        } else {
+          currentBlock.content += ' ' + trimmed;
+        }
+        continue;
+      }
+      
+      // Empty line - save current block
+      if (currentBlock) {
+        result.content.push(currentBlock);
+        currentBlock = null;
+      }
+    }
+    
+    // Save final block
+    if (currentBlock) {
+      result.content.push(currentBlock);
+    }
+    
+    return JSON.stringify(result, null, 2);
+  };
+
+  // Normal/paragraph formatting - cleans up text and ensures proper paragraph spacing
+  const formatAsNormal = (text: string) => {
+    if (!text.trim()) return text;
+    
+    // Split into lines and rejoin with proper paragraph spacing
+    const lines = text.split('\n');
+    const paragraphs: string[] = [];
+    let currentParagraph = '';
+    
+    for (const line of lines) {
+      const trimmed = line.trim();
+      
+      // If line is empty, finalize current paragraph
+      if (!trimmed) {
+        if (currentParagraph) {
+          paragraphs.push(currentParagraph);
+          currentParagraph = '';
+        }
+        continue;
+      }
+      
+      // Add to current paragraph
+      if (currentParagraph) {
+        currentParagraph += ' ' + trimmed;
+      } else {
+        currentParagraph = trimmed;
+      }
+    }
+    
+    // Add final paragraph
+    if (currentParagraph) {
+      paragraphs.push(currentParagraph);
+    }
+    
+    // Join with double newlines for paragraph separation
+    return paragraphs.join('\n\n');
+  };
+
   const markdownToHtml = (markdown: string) => {
     return markdown
       .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mb-4">$1</h1>')
@@ -171,7 +518,16 @@ export function PromptEditor({ prompt, mode, onSave, onCancel }: PromptEditorPro
       .replace(/^\\d+\\. (.*$)/gim, '<li class="ml-4">$1</li>')
       .replace(/\\n/g, '<br>');
   };
-
+  
+  // Add reset functions
+  const resetToOriginalContent = () => {
+    setContent(originalContent);
+  };
+  
+  const resetToOriginalExampleContent = () => {
+    setExampleContent(originalExampleContent);
+  };
+  
   return (
     <div className="min-h-screen bg-background">
       {/* Compact Header */}
@@ -186,11 +542,12 @@ export function PromptEditor({ prompt, mode, onSave, onCancel }: PromptEditorPro
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowPreview(!showPreview)}
+                onClick={handleToggleSidebar}
                 className="gap-1 h-8 px-2"
+                title={sidebarVisible ? "Hide sidebar" : "Show sidebar"}
               >
-                {showPreview ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                <span className="hidden sm:inline">{showPreview ? 'Hide' : 'Preview'}</span>
+                {sidebarVisible ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                <span className="hidden sm:inline">Preview</span>
               </Button>
               <Button variant="ghost" size="sm" onClick={onCancel} className="gap-1 h-8 px-2">
                 <X className="h-3 w-3" />
@@ -549,19 +906,154 @@ export function PromptEditor({ prompt, mode, onSave, onCancel }: PromptEditorPro
 
           {/* Editor and Preview */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 min-h-[calc(100vh-200px)]">
-            {/* Editor */}
+            {/* Main Content or Example Editor */}
             <div className={cn(
-              "space-y-2",
+              "space-y-2 relative",
               showPreview ? "lg:block" : "lg:col-span-2"
             )}>
-              <Label htmlFor="content" className="text-xs font-medium text-muted-foreground">
-                Content (Markdown)
-              </Label>
-              <textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="# Your Prompt Title
+              {!showExample ? (
+                // Main Content Editor
+                <>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="content" className="text-xs font-medium text-muted-foreground">
+                      Content (Markdown)
+                    </Label>
+                    
+                    {/* Top-right buttons in text editor area */}
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowExample(true)}
+                        className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                        title="Switch to example editor"
+                      >
+                        <Eye className="h-3 w-3" />
+                        Example
+                      </Button>
+                      
+                      <div className="relative" ref={downloadDropdownRef}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowDownloadDropdown(!showDownloadDropdown)}
+                          className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                          title="Download options"
+                        >
+                          <Download className="h-3 w-3" />
+                          Download
+                        </Button>
+                        
+                        {/* Download Options Dropdown */}
+                        {showDownloadDropdown && (
+                          <div className="absolute top-full right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 min-w-[120px]">
+                            <div className="p-1 space-y-0.5">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDownload('md')}
+                                className="h-6 px-2 text-xs gap-2 w-full justify-start text-muted-foreground hover:text-foreground"
+                              >
+                                <FileText className="h-3 w-3" />
+                                Markdown
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDownload('docx')}
+                                className="h-6 px-2 text-xs gap-2 w-full justify-start text-muted-foreground hover:text-foreground"
+                              >
+                                <FileText className="h-3 w-3" />
+                                Word Doc
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDownload('pdf')}
+                                className="h-6 px-2 text-xs gap-2 w-full justify-start text-muted-foreground hover:text-foreground"
+                              >
+                                <FileText className="h-3 w-3" />
+                                PDF Print
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (content) {
+                            navigator.clipboard.writeText(content);
+                          }
+                        }}
+                        className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                        title="Copy content"
+                      >
+                        <Copy className="h-3 w-3" />
+                        Copy
+                      </Button>
+                      
+                      {/* Format buttons positioned under Copy button but inside text area */}
+                      <div className="relative">
+                        <div className="absolute top-7 right-2 flex items-center gap-1 bg-background/80 backdrop-blur-sm p-1 rounded border border-border">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setContent(formatAsNormal(content))}
+                            className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                            title="Format as Normal Text"
+                          >
+                            P
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setContent(formatAsMarkdown(content))}
+                            className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                            title="Format as Markdown"
+                          >
+                            MD
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setContent(formatAsJSON(content))}
+                            className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                            title="Format as JSON"
+                          >
+                            JSON
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={resetToOriginalContent}
+                            className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                            title="Reset to original content"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <textarea
+                    id="content"
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="# Your Prompt Title
 
 Write your prompt content here using Markdown...
 
@@ -579,21 +1071,204 @@ Your example code or content here
 - Use clear, concise language
 - Provide context and examples
 - Include expected outcomes"
-                className="w-full h-[calc(100vh-200px)] p-3 border border-input rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent font-mono text-xs leading-relaxed bg-background"
-              />
+                    className="w-full h-[calc(100vh-200px)] p-3 pt-8 border border-input rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent font-mono text-xs leading-relaxed bg-background"
+                  />
+                </>
+              ) : (
+                // Example Editor
+                <>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="example-content" className="text-xs font-medium text-muted-foreground">
+                      Example Usage (Markdown)
+                    </Label>
+                    
+                    {/* Top-right buttons in example editor area */}
+                    <div className="flex items-center gap-1">
+                      
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowExample(false)}
+                        className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                        title="Switch back to main content"
+                      >
+                        <X className="h-3 w-3" />
+                        Content
+                      </Button>
+                      
+                      <div className="relative" ref={downloadDropdownRef}>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowDownloadDropdown(!showDownloadDropdown)}
+                          className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                          title="Download options"
+                        >
+                          <Download className="h-3 w-3" />
+                          Download
+                        </Button>
+                        
+                        {/* Download Options Dropdown */}
+                        {showDownloadDropdown && (
+                          <div className="absolute top-full right-0 mt-1 bg-popover border border-border rounded-md shadow-lg z-50 min-w-[120px]">
+                            <div className="p-1 space-y-0.5">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDownload('md')}
+                                className="h-6 px-2 text-xs gap-2 w-full justify-start text-muted-foreground hover:text-foreground"
+                              >
+                                <FileText className="h-3 w-3" />
+                                Markdown
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDownload('docx')}
+                                className="h-6 px-2 text-xs gap-2 w-full justify-start text-muted-foreground hover:text-foreground"
+                              >
+                                <FileText className="h-3 w-3" />
+                                Word Doc
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDownload('pdf')}
+                                className="h-6 px-2 text-xs gap-2 w-full justify-start text-muted-foreground hover:text-foreground"
+                              >
+                                <FileText className="h-3 w-3" />
+                                PDF Print
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (exampleContent) {
+                            navigator.clipboard.writeText(exampleContent);
+                          }
+                        }}
+                        className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                        title="Copy example content"
+                      >
+                        <Copy className="h-3 w-3" />
+                        Copy
+                      </Button>
+                      
+                      {/* Format buttons positioned under Copy button but inside text area */}
+                      <div className="relative">
+                        <div className="absolute top-7 right-2 flex items-center gap-1 bg-background/80 backdrop-blur-sm p-1 rounded border border-border">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setExampleContent(formatAsNormal(exampleContent))}
+                            className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                            title="Format as Normal Text"
+                          >
+                            P
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setExampleContent(formatAsMarkdown(exampleContent))}
+                            className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                            title="Format as Markdown"
+                          >
+                            MD
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setExampleContent(formatAsJSON(exampleContent))}
+                            className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                            title="Format as JSON"
+                          >
+                            JSON
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={resetToOriginalExampleContent}
+                            className="h-6 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                            title="Reset to original content"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <textarea
+                    id="example-content"
+                    value={exampleContent}
+                    onChange={(e) => setExampleContent(e.target.value)}
+                    placeholder="# Example Usage
+
+Show users how to use this prompt effectively...
+
+## Input Example
+```
+User input: Write a story about a robot
+```
+
+## Expected Output
+```
+Once upon a time, in a world where technology...
+```
+
+## Tips for Best Results
+- Be specific in your request
+- Provide context when needed
+- Experiment with different approaches"
+                    className="w-full h-[calc(100vh-200px)] p-3 pt-8 border border-input rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent font-mono text-xs leading-relaxed bg-background"
+                  />
+                </>
+              )}
             </div>
 
             {/* Preview */}
             {showPreview && (
               <div className="space-y-2">
-                <Label className="text-xs font-medium text-muted-foreground">Preview</Label>
+                <Label className="text-xs font-medium text-muted-foreground">Live Preview</Label>
                 <div className="h-[calc(100vh-200px)] p-3 border border-input rounded-md overflow-y-auto bg-card">
-                  <div 
-                    className="prose prose-xs max-w-none dark:prose-invert"
-                    dangerouslySetInnerHTML={{ 
-                      __html: markdownToHtml(content || 'No content to preview...') 
-                    }}
-                  />
+                  <div className="space-y-6">
+                    {!showExample ? (
+                      <div>
+                        <h3 className="text-sm font-semibold mb-2 text-coral-600 dark:text-coral-400">Main Content</h3>
+                        <div 
+                          className="prose prose-xs max-w-none dark:prose-invert"
+                          dangerouslySetInnerHTML={{ 
+                            __html: markdownToHtml(content || 'No content to preview...') 
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <h3 className="text-sm font-semibold mb-2 text-amber-600 dark:text-amber-400">Example Usage</h3>
+                        <div 
+                          className="prose prose-xs max-w-none dark:prose-invert"
+                          dangerouslySetInnerHTML={{ 
+                            __html: markdownToHtml(exampleContent || 'No example content to preview...') 
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}

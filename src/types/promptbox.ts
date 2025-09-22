@@ -3,9 +3,11 @@ export interface PromptCard {
   title: string;
   description: string;
   content?: string; // Markdown content for full editor
+  exampleContent?: string; // Markdown content for example usage
   rating: number;
   tags: string[];
   categories: string[];
+  pinned?: boolean; // Add pinned property
   actions: {
     edit: boolean;
     delete: boolean;

@@ -1,13 +1,12 @@
 'use client';
 
-import { Copy, Edit, Star, Trash2 } from 'lucide-react';
+import { Copy, Edit, Pin, Star, Trash2 } from 'lucide-react';
 import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -19,6 +18,7 @@ interface PromptCardProps {
   onEdit?: (card: PromptCardType) => void;
   onDelete?: (card: PromptCardType) => void;
   onCopy?: (card: PromptCardType) => void;
+  onPin?: (card: PromptCardType) => void;
 }
 
 function StarRating({
@@ -55,15 +55,20 @@ const PromptCardComponent = memo(function PromptCard({
   onEdit,
   onDelete,
   onCopy,
+  onPin,
 }: PromptCardProps) {
   const hasContent = card.title || card.description;
 
   return (
-    <Card className="group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border-border/20 glass-card hover-lift animate-fade-in bg-card/90 backdrop-blur-md hover:border-primary/30 hover:shadow-primary/10 dark:border-gradient-gray">
+    <Card 
+      className={cn(
+        "group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border-border/20 glass-card hover-lift animate-fade-in bg-card/90 backdrop-blur-md hover:border-primary/30 hover:shadow-primary/10 dark:border-gradient-gray"
+      )}
+    >
       {/* Enhanced background gradients */}
       <div className="absolute inset-0 bg-gradient-card opacity-50" />
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-all duration-500" />
-
+      
       {/* Subtle border glow effect */}
       <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-0 group-hover:opacity-50 transition-all duration-500 blur-sm" />
 
@@ -90,6 +95,20 @@ const PromptCardComponent = memo(function PromptCard({
 
             {/* Enhanced action buttons */}
             <div className="flex items-center gap-0.5 opacity-50 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-105">
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "h-6 w-6 hover:scale-110 transition-all duration-200 hover-glow",
+                  card.pinned 
+                    ? "text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/50 fill-purple-600" 
+                    : "text-muted-foreground hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/50"
+                )}
+                onClick={() => onPin?.(card)}
+                title={card.pinned ? "Unpin prompt" : "Pin prompt"}
+              >
+                <Pin className={cn("h-3 w-3", card.pinned && "fill-current")} />
+              </Button>
               {card.actions.edit && (
                 <Button
                   variant="ghost"
@@ -128,61 +147,11 @@ const PromptCardComponent = memo(function PromptCard({
         </CardHeader>
 
         {(card.description || !hasContent) && (
-          <CardContent className="pb-2">
+          <CardContent className="pb-3">
             <p className="text-muted-foreground text-xs line-clamp-2 leading-relaxed group-hover:text-foreground/80 transition-colors duration-300">
               {card.description || 'No description available'}
             </p>
           </CardContent>
-        )}
-
-        {(card.categories.length > 0 || card.tags.length > 0) && (
-          <CardFooter className="pt-0 pb-3 flex-col items-start gap-2">
-            {card.categories.length > 0 && (
-              <div className="w-full space-y-1">
-                <div className="text-xs font-bold text-muted-foreground/80 uppercase tracking-widest">
-                  Categories
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {card.categories.map((category) => {
-                    // Create unique key by combining category with card title hash
-                    const uniqueKey = `category-${category}-${card.title?.replace(/\s+/g, '-').toLowerCase() || 'untitled'}`;
-                    return (
-                      <Badge
-                        key={uniqueKey}
-                        variant="secondary"
-                        className="text-xs px-1.5 py-0.5 font-semibold hover:scale-105 transition-transform duration-200 bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-blue-600 dark:text-blue-400 border-blue-300/40 hover:from-blue-500/30 hover:to-purple-500/30 hover:border-blue-400/60 shadow-sm"
-                      >
-                        {category}
-                      </Badge>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {card.tags.length > 0 && (
-              <div className="w-full space-y-1">
-                <div className="text-xs font-bold text-muted-foreground/80 uppercase tracking-widest">
-                  Tags
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {card.tags.map((tag) => {
-                    // Create unique key by combining tag with card title hash
-                    const uniqueKey = `tag-${tag}-${card.title?.replace(/\s+/g, '-').toLowerCase() || 'untitled'}`;
-                    return (
-                      <Badge
-                        key={uniqueKey}
-                        variant="outline"
-                        className="text-xs px-1.5 py-0.5 hover:scale-105 transition-all duration-200 bg-gradient-to-r from-cyan-400/10 to-teal-500/10 border-cyan-400/40 text-cyan-600 dark:text-cyan-400 hover:from-cyan-400/20 hover:to-teal-500/20 hover:border-cyan-500/60 hover:text-cyan-700 dark:hover:text-cyan-300 shadow-sm"
-                      >
-                        {tag}
-                      </Badge>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </CardFooter>
         )}
       </div>
     </Card>

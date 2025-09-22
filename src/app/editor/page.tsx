@@ -4,7 +4,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { PromptEditor } from '@/components/PromptEditor';
-import type { PromptCard } from '@/types/promptbox';
+import { Sidebar } from '@/components/Sidebar';
+import type { PromptCard, CategoryType, TagType } from '@/types/promptbox';
 
 // Mock data - in a real app, this would come from a database or API
 const mockPrompts: PromptCard[] = [
@@ -397,11 +398,24 @@ function EditorPageContent() {
   const searchParams = useSearchParams();
   const [prompt, setPrompt] = useState<PromptCard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(true); // Default to show sidebar
+  const [filters, setFilters] = useState({ categories: ['ALL'], tags: ['ALL'] });
 
   const promptId = searchParams.get('id');
   const mode = promptId ? 'edit' : 'create';
 
   useEffect(() => {
+    // Load filters from localStorage
+    const filtersData = localStorage.getItem('promptbox_filters');
+    if (filtersData) {
+      try {
+        const parsed = JSON.parse(filtersData);
+        setFilters(parsed);
+      } catch (error) {
+        console.error('Error parsing filters:', error);
+      }
+    }
+    
     if (promptId) {
       // In a real app, fetch the prompt from an API
       const foundPrompt = mockPrompts.find(p => p.id === promptId);
@@ -427,6 +441,12 @@ function EditorPageContent() {
     }
     setIsLoading(false);
   }, [promptId, router]);
+
+  // Dummy handlers for sidebar (not functional in editor)
+  const handleCategoryToggle = (category: CategoryType) => {};
+  const handleTagToggle = (tag: TagType) => {};
+  const handleCategoryDelete = (category: CategoryType) => {};
+  const handleTagDelete = (tag: TagType) => {};
 
   const handleSave = (updatedPrompt: PromptCard) => {
     // In a real app, save to API and update global filters
@@ -487,12 +507,35 @@ function EditorPageContent() {
   }
 
   return (
-    <PromptEditor
-      prompt={prompt}
-      mode={mode}
-      onSave={handleSave}
-      onCancel={handleCancel}
-    />
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar */}
+      {showSidebar && (
+        <div className="relative z-20">
+          <Sidebar
+            categories={filters.categories}
+            prompts={mockPrompts}
+            activeCategories={[]}
+            activeTags={[]}
+            onCategoryToggle={handleCategoryToggle}
+            onTagToggle={handleTagToggle}
+            onCategoryDelete={handleCategoryDelete}
+            onTagDelete={handleTagDelete}
+          />
+        </div>
+      )}
+      
+      {/* Editor */}
+      <div className="flex-1">
+        <PromptEditor
+          prompt={prompt}
+          mode={mode}
+          onSave={handleSave}
+          onCancel={handleCancel}
+          showSidebar={showSidebar}
+          onToggleSidebar={() => setShowSidebar(!showSidebar)}
+        />
+      </div>
+    </div>
   );
 }
 
