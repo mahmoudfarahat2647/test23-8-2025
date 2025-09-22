@@ -18,8 +18,27 @@ interface EditorToolbarProps {
 }
 
 // Available categories and tags (in a real app, these would come from an API)
-const availableCategories = ['vibe', 'artist', 'writing', 'frontend', 'backend', 'design', 'ai', 'productivity'];
-const availableTags = ['chatgpt', 'claude', 'super', 'prompt', 'work', 'creative', 'code', 'technical', 'automation'];
+const availableCategories = [
+  'vibe',
+  'artist',
+  'writing',
+  'frontend',
+  'backend',
+  'design',
+  'ai',
+  'productivity',
+];
+const availableTags = [
+  'chatgpt',
+  'claude',
+  'super',
+  'prompt',
+  'work',
+  'creative',
+  'code',
+  'technical',
+  'automation',
+];
 
 export function EditorToolbar({
   rating,
@@ -40,7 +59,7 @@ export function EditorToolbar({
 
   const toggleCategory = (category: string) => {
     if (categories.includes(category)) {
-      onCategoriesChange(categories.filter(c => c !== category));
+      onCategoriesChange(categories.filter((c) => c !== category));
     } else {
       onCategoriesChange([...categories, category]);
     }
@@ -48,7 +67,7 @@ export function EditorToolbar({
 
   const toggleTag = (tag: string) => {
     if (tags.includes(tag)) {
-      onTagsChange(tags.filter(t => t !== tag));
+      onTagsChange(tags.filter((t) => t !== tag));
     } else {
       onTagsChange([...tags, tag]);
     }
@@ -71,11 +90,11 @@ export function EditorToolbar({
   };
 
   const removeCategory = (category: string) => {
-    onCategoriesChange(categories.filter(c => c !== category));
+    onCategoriesChange(categories.filter((c) => c !== category));
   };
 
   const removeTag = (tag: string) => {
-    onTagsChange(tags.filter(t => t !== tag));
+    onTagsChange(tags.filter((t) => t !== tag));
   };
 
   return (
@@ -153,7 +172,7 @@ export function EditorToolbar({
         {/* Available Categories */}
         <div className="flex flex-wrap gap-1.5">
           {availableCategories
-            .filter(cat => !categories.includes(cat))
+            .filter((cat) => !categories.includes(cat))
             .map((category) => (
               <Badge
                 key={category}
@@ -250,7 +269,7 @@ export function EditorToolbar({
         {/* Available Tags */}
         <div className="flex flex-wrap gap-1.5">
           {availableTags
-            .filter(tag => !tags.includes(tag))
+            .filter((tag) => !tags.includes(tag))
             .map((tag) => (
               <Badge
                 key={tag}

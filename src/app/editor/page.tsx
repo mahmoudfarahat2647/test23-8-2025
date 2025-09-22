@@ -5,14 +5,15 @@ import { Suspense, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { PromptEditor } from '@/components/PromptEditor';
 import { Sidebar } from '@/components/Sidebar';
-import type { PromptCard, CategoryType, TagType } from '@/types/promptbox';
+import type { CategoryType, PromptCard, TagType } from '@/types/promptbox';
 
 // Mock data - in a real app, this would come from a database or API
 const mockPrompts: PromptCard[] = [
   {
     id: 'creative-writing-assistant',
     title: 'Creative Writing Assistant',
-    description: 'A powerful prompt for generating creative stories, poems, and artistic content with vivid imagery and compelling narratives.',
+    description:
+      'A powerful prompt for generating creative stories, poems, and artistic content with vivid imagery and compelling narratives.',
     content: `# Creative Writing Assistant
 
 ## Overview
@@ -53,7 +54,8 @@ Create a story about a time-traveling artist who discovers that their paintings 
   {
     id: 'frontend-code-generator',
     title: 'Frontend Code Generator',
-    description: 'Generate modern React components with TypeScript, Tailwind CSS, and best practices for responsive design.',
+    description:
+      'Generate modern React components with TypeScript, Tailwind CSS, and best practices for responsive design.',
     content: `# Frontend Code Generator
 
 ## Purpose
@@ -133,7 +135,8 @@ const Button: React.FC<ButtonProps> = ({
   {
     id: 'backend-api-designer',
     title: 'Backend API Designer',
-    description: 'Create robust REST APIs with proper authentication, validation, and documentation following industry standards.',
+    description:
+      'Create robust REST APIs with proper authentication, validation, and documentation following industry standards.',
     content: `# Backend API Designer
 
 ## Overview
@@ -278,7 +281,8 @@ app.post('/api/users', validateUser, async (req, res) => {
   {
     id: 'digital-art-concept',
     title: 'Digital Art Concept',
-    description: 'Generate detailed prompts for AI art generation with specific styles, lighting, and composition instructions.',
+    description:
+      'Generate detailed prompts for AI art generation with specific styles, lighting, and composition instructions.',
     content: `# Digital Art Concept Generator
 
 ## Purpose
@@ -399,7 +403,10 @@ function EditorPageContent() {
   const [prompt, setPrompt] = useState<PromptCard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showSidebar, setShowSidebar] = useState(true); // Default to show sidebar
-  const [filters, setFilters] = useState({ categories: ['ALL'], tags: ['ALL'] });
+  const [filters, setFilters] = useState({
+    categories: ['ALL'],
+    tags: ['ALL'],
+  });
 
   const promptId = searchParams.get('id');
   const mode = promptId ? 'edit' : 'create';
@@ -411,14 +418,12 @@ function EditorPageContent() {
       try {
         const parsed = JSON.parse(filtersData);
         setFilters(parsed);
-      } catch (error) {
-        console.error('Error parsing filters:', error);
-      }
+      } catch (_error) {}
     }
-    
+
     if (promptId) {
       // In a real app, fetch the prompt from an API
-      const foundPrompt = mockPrompts.find(p => p.id === promptId);
+      const foundPrompt = mockPrompts.find((p) => p.id === promptId);
       if (foundPrompt) {
         setPrompt(foundPrompt);
       } else {
@@ -432,7 +437,8 @@ function EditorPageContent() {
         id: undefined,
         title: '',
         description: '',
-        content: '# New Prompt\n\nStart writing your prompt here...\n\n## Instructions\n\n1. Add your instructions here\n2. Provide examples\n3. Include tips and best practices\n',
+        content:
+          '# New Prompt\n\nStart writing your prompt here...\n\n## Instructions\n\n1. Add your instructions here\n2. Provide examples\n3. Include tips and best practices\n',
         rating: 0,
         tags: [],
         categories: [],
@@ -443,49 +449,49 @@ function EditorPageContent() {
   }, [promptId, router]);
 
   // Dummy handlers for sidebar (not functional in editor)
-  const handleCategoryToggle = (category: CategoryType) => {};
-  const handleTagToggle = (tag: TagType) => {};
-  const handleCategoryDelete = (category: CategoryType) => {};
-  const handleTagDelete = (tag: TagType) => {};
+  const handleCategoryToggle = (_category: CategoryType) => {};
+  const handleTagToggle = (_tag: TagType) => {};
+  const handleCategoryDelete = (_category: CategoryType) => {};
+  const handleTagDelete = (_tag: TagType) => {};
 
   const handleSave = (updatedPrompt: PromptCard) => {
-    // In a real app, save to API and update global filters
-    console.log('Saving prompt:', updatedPrompt);
-    
     // Store the new categories and tags to localStorage for the main page to pick up
     // In a real app, this would be handled by a global state manager or API
-    
+
     // Get current available filters to determine what's new
     const filtersData = localStorage.getItem('promptbox_filters');
-    let existingCategories = ['ALL', 'vibe', 'artist', 'writing', 'frontend', 'backend'];
+    let existingCategories = [
+      'ALL',
+      'vibe',
+      'artist',
+      'writing',
+      'frontend',
+      'backend',
+    ];
     let existingTags = ['ALL', 'chatgpt', 'super', 'prompt', 'work', 'vit'];
-    
+
     if (filtersData) {
       try {
         const { categories, tags } = JSON.parse(filtersData);
         existingCategories = categories;
         existingTags = tags;
-      } catch (error) {
-        console.error('Error parsing filters:', error);
-      }
+      } catch (_error) {}
     }
-    
+
     const existingData = {
-      newCategories: updatedPrompt.categories.filter(cat => 
-        !existingCategories.includes(cat)
+      newCategories: updatedPrompt.categories.filter(
+        (cat) => !existingCategories.includes(cat),
       ),
-      newTags: updatedPrompt.tags.filter(tag => 
-        !existingTags.includes(tag)
-      ),
-      prompt: updatedPrompt
+      newTags: updatedPrompt.tags.filter((tag) => !existingTags.includes(tag)),
+      prompt: updatedPrompt,
     };
-    
+
     localStorage.setItem('promptEditor_data', JSON.stringify(existingData));
-    
+
     toast.success(
-      mode === 'create' 
-        ? `Prompt "${updatedPrompt.title}" created successfully!` 
-        : `Prompt "${updatedPrompt.title}" updated successfully!`
+      mode === 'create'
+        ? `Prompt "${updatedPrompt.title}" created successfully!`
+        : `Prompt "${updatedPrompt.title}" updated successfully!`,
     );
     router.push('/');
   };
@@ -523,7 +529,7 @@ function EditorPageContent() {
           />
         </div>
       )}
-      
+
       {/* Editor */}
       <div className="flex-1">
         <PromptEditor
@@ -541,11 +547,13 @@ function EditorPageContent() {
 
 export default function EditorPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      }
+    >
       <EditorPageContent />
     </Suspense>
   );

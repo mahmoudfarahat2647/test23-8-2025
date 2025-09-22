@@ -9,8 +9,8 @@ import { Header } from '@/components/Header';
 import { PromptCard } from '@/components/PromptCard';
 import { Sidebar } from '@/components/Sidebar';
 import { Button } from '@/components/ui/button';
-import { usePerformanceOptimization } from '@/hooks/usePerformanceOptimization';
 import { cn } from '@/lib/utils';
+import { usePerformanceOptimization } from '@/hooks/usePerformanceOptimization';
 import type {
   CategoryType,
   PromptBoxData,
@@ -42,6 +42,7 @@ const initialPromptBoxData: PromptBoxData = {
       rating: 4,
       tags: ['chatgpt', 'prompt', 'work'],
       categories: ['writing', 'vibe'],
+      pinned: false,
       actions: {
         edit: true,
         delete: true,
@@ -56,6 +57,7 @@ const initialPromptBoxData: PromptBoxData = {
       rating: 5,
       tags: ['super', 'work', 'vit'],
       categories: ['frontend'],
+      pinned: false,
       actions: {
         edit: true,
         delete: true,
@@ -70,6 +72,7 @@ const initialPromptBoxData: PromptBoxData = {
       rating: 4,
       tags: ['work', 'super'],
       categories: ['backend'],
+      pinned: false,
       actions: {
         edit: true,
         delete: true,
@@ -84,6 +87,7 @@ const initialPromptBoxData: PromptBoxData = {
       rating: 3,
       tags: ['prompt', 'vit'],
       categories: ['artist', 'vibe'],
+      pinned: false,
       actions: {
         edit: true,
         delete: true,
@@ -98,6 +102,7 @@ const initialPromptBoxData: PromptBoxData = {
       rating: 5,
       tags: ['work', 'super'],
       categories: ['vibe'],
+      pinned: false,
       actions: {
         edit: true,
         delete: true,
@@ -112,6 +117,7 @@ const initialPromptBoxData: PromptBoxData = {
       rating: 4,
       tags: ['chatgpt', 'work'],
       categories: ['frontend', 'backend'],
+      pinned: false,
       actions: {
         edit: true,
         delete: true,
@@ -132,7 +138,6 @@ export default function PromptBox() {
   ]);
   const [activeTags, setActiveTags] = useState<TagType[]>(['ALL']);
   const [deletingCard, setDeletingCard] = useState<PromptCardType | null>(null);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   // Listen for new categories and tags from the editor
   useEffect(() => {
@@ -141,71 +146,76 @@ export default function PromptBox() {
       if (editorData) {
         try {
           const { newCategories, newTags, prompt } = JSON.parse(editorData);
-
+          
           // Update the prompt box data with new categories and tags
           setPromptBoxData((prev) => {
             const updatedCategories = [
-              ...new Set([...prev.filters.categories, ...newCategories]),
+              ...new Set([...prev.filters.categories, ...newCategories])
             ];
             const updatedTags = [
-              ...new Set([...prev.filters.tags, ...newTags]),
+              ...new Set([...prev.filters.tags, ...newTags])
             ];
-
-            // Handle prompt creation/update
+            
+            // Handle prompt creation/update while preserving pinned state
             let updatedPrompts = prev.promptCards;
-            if (prompt.id && prev.promptCards.find((p) => p.id === prompt.id)) {
-              // Update existing prompt
-              updatedPrompts = prev.promptCards.map((p) =>
-                p.id === prompt.id
-                  ? {
-                      ...prompt,
-                      actions: { edit: true, delete: true, copy: true },
-                    }
-                  : p,
+            const existingPrompt = prev.promptCards.find(p => p.id === prompt.id);
+            const isPinned = existingPrompt ? existingPrompt.pinned : false;
+            
+            if (prompt.id && existingPrompt) {
+              // Update existing prompt, preserving pinned state
+              updatedPrompts = prev.promptCards.map(p => 
+                p.id === prompt.id ? { ...prompt, pinned: isPinned, actions: { edit: true, delete: true, copy: true } } : p
               );
             } else {
               // Add new prompt with generated ID
               const newPrompt = {
                 ...prompt,
-                id:
-                  prompt.id || prompt.title.toLowerCase().replace(/\s+/g, '-'),
-                actions: { edit: true, delete: true, copy: true },
+                id: prompt.id || prompt.title.toLowerCase().replace(/\s+/g, '-'),
+                pinned: false, // New prompts are not pinned by default
+                actions: { edit: true, delete: true, copy: true }
               };
               updatedPrompts = [...prev.promptCards, newPrompt];
             }
-
+            
+            // Sort to show pinned items first
+            const sortedPrompts = [...updatedPrompts].sort((a, b) => {
+              if (a.pinned && !b.pinned) return -1;
+              if (!a.pinned && b.pinned) return 1;
+              return a.title.localeCompare(b.title);
+            });
+            
             return {
               ...prev,
               filters: {
                 categories: updatedCategories,
                 tags: updatedTags,
               },
-              promptCards: updatedPrompts,
+              promptCards: sortedPrompts,
             };
           });
-
+          
           // Clear the localStorage after processing
           localStorage.removeItem('promptEditor_data');
-
+          
           // Show success message
           if (newCategories.length > 0 || newTags.length > 0) {
             const additions = [];
-            if (newCategories.length > 0)
-              additions.push(`${newCategories.length} new categories`);
-            if (newTags.length > 0)
-              additions.push(`${newTags.length} new tags`);
+            if (newCategories.length > 0) additions.push(`${newCategories.length} new categories`);
+            if (newTags.length > 0) additions.push(`${newTags.length} new tags`);
             toast.success(`Added ${additions.join(' and ')} successfully!`);
           }
-        } catch (_error) {}
+      } catch (error) {
+        console.error('Error processing editor data:', error);
       }
-    };
+    }
+  };
 
     // Check for data on component mount
     handleStorageChange();
-
+    
     // Listen for storage changes (in case of multiple tabs)
     window.addEventListener('storage', handleStorageChange);
-
+    
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
@@ -264,13 +274,7 @@ export default function PromptBox() {
 
       return matchesSearch && matchesCategory && matchesTag;
     });
-  }, [
-    searchValue,
-    activeCategories,
-    activeTags,
-    promptBoxData.promptCards,
-    optimizedFilter,
-  ]);
+  }, [searchValue, activeCategories, activeTags, promptBoxData.promptCards, optimizedFilter]);
 
   // Copy prompt content to clipboard
   const handleCopyPrompt = useCallback(async (card: PromptCardType) => {
@@ -303,24 +307,18 @@ export default function PromptBox() {
   }, []);
 
   // Edit prompt - navigate to editor
-  const handleEditPrompt = useCallback(
-    (card: PromptCardType) => {
-      // Generate a simple ID if the card doesn't have one
-      const cardId = card.id || card.title.toLowerCase().replace(/\s+/g, '-');
-
-      // Store current filters in localStorage for the editor to access
-      localStorage.setItem(
-        'promptbox_filters',
-        JSON.stringify({
-          categories: promptBoxData.filters.categories,
-          tags: promptBoxData.filters.tags,
-        }),
-      );
-
-      router.push(`/editor?id=${encodeURIComponent(cardId)}`);
-    },
-    [router, promptBoxData.filters],
-  );
+  const handleEditPrompt = useCallback((card: PromptCardType) => {
+    // Generate a simple ID if the card doesn't have one
+    const cardId = card.id || card.title.toLowerCase().replace(/\s+/g, '-');
+    
+    // Store current filters in localStorage for the editor to access
+    localStorage.setItem('promptbox_filters', JSON.stringify({
+      categories: promptBoxData.filters.categories,
+      tags: promptBoxData.filters.tags
+    }));
+    
+    router.push(`/editor?id=${encodeURIComponent(cardId)}`);
+  }, [router, promptBoxData.filters]);
 
   // Delete prompt
   const handleDeletePrompt = useCallback((card: PromptCardType) => {
@@ -353,16 +351,40 @@ export default function PromptBox() {
 
   const handleCreatePrompt = useCallback(() => {
     // Store current filters in localStorage for the editor to access
-    localStorage.setItem(
-      'promptbox_filters',
-      JSON.stringify({
-        categories: promptBoxData.filters.categories,
-        tags: promptBoxData.filters.tags,
-      }),
-    );
-
+    localStorage.setItem('promptbox_filters', JSON.stringify({
+      categories: promptBoxData.filters.categories,
+      tags: promptBoxData.filters.tags
+    }));
+    
     router.push('/editor');
   }, [router, promptBoxData.filters]);
+
+  // Pin/unpin prompt
+  const handlePinPrompt = useCallback((card: PromptCardType) => {
+    setPromptBoxData((prev) => {
+      const updatedCards = prev.promptCards.map((p) =>
+        p.title === card.title && p.description === card.description
+          ? { ...p, pinned: !p.pinned }
+          : p
+      );
+      
+      // Sort cards to show pinned items first
+      const sortedCards = [...updatedCards].sort((a, b) => {
+        // Pinned items come first
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        // Then sort by title alphabetically
+        return a.title.localeCompare(b.title);
+      });
+      
+      return {
+        ...prev,
+        promptCards: sortedCards,
+      };
+    });
+    
+    toast.success(card.pinned ? 'Prompt unpinned!' : 'Prompt pinned!');
+  }, []);
 
   // Delete category from filters and remove from all prompts
   const handleCategoryDelete = useCallback((categoryToDelete: CategoryType) => {
@@ -426,7 +448,7 @@ export default function PromptBox() {
         style={{ animationDelay: '4s' }}
       />
 
-      {/* Sidebar */}
+      {/* Sidebar - Always Visible */}
       <div className="relative z-20">
         <Sidebar
           categories={promptBoxData.filters.categories}
@@ -437,8 +459,6 @@ export default function PromptBox() {
           onTagToggle={handleTagToggle}
           onCategoryDelete={handleCategoryDelete}
           onTagDelete={handleTagDelete}
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />
       </div>
 
@@ -458,12 +478,9 @@ export default function PromptBox() {
               />
             </div>
 
-            {/* Enhanced Filters - Only show on mobile or when sidebar is collapsed */}
+            {/* Enhanced Filters - Only show on mobile screens */}
             <div
-              className={cn(
-                'animate-slide-up lg:hidden',
-                isSidebarCollapsed && 'lg:block',
-              )}
+              className="animate-slide-up lg:hidden"
               style={{ animationDelay: '0.2s' }}
             >
               <Filters
@@ -501,6 +518,7 @@ export default function PromptBox() {
                         onEdit={handleEditPrompt}
                         onDelete={handleDeletePrompt}
                         onCopy={handleCopyPrompt}
+                        onPin={handlePinPrompt}
                       />
                     </div>
                   ))}
@@ -593,19 +611,7 @@ export default function PromptBox() {
               </p>
               <div className="flex gap-3 justify-center">
                 <Button
-                  variant="outline"
-                  onClick={cancelDelete}
-                  className="px-6 hover:scale-105 transition-transform duration-200"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={confirmDelete}
-                  className="px-6 bg-gradient-to-r from-destructive to-destructive/90 hover:from-destructive/90 hover:to-destructive shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
-                >
-                  Delete
-                </Button>
+                  variant="outline"                  onClick={cancelDelete}
               </div>
             </div>
           </div>

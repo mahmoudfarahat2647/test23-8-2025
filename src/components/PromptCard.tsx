@@ -2,14 +2,8 @@
 
 import { Copy, Edit, Pin, Star, Trash2 } from 'lucide-react';
 import { memo } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { PromptCard as PromptCardType } from '@/types/promptbox';
 
@@ -60,15 +54,15 @@ const PromptCardComponent = memo(function PromptCard({
   const hasContent = card.title || card.description;
 
   return (
-    <Card 
+    <Card
       className={cn(
-        "group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border-border/20 glass-card hover-lift animate-fade-in bg-card/90 backdrop-blur-md hover:border-primary/30 hover:shadow-primary/10 dark:border-gradient-gray"
+        'group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-1 border-border/20 glass-card hover-lift animate-fade-in bg-card/90 backdrop-blur-md hover:border-primary/30 hover:shadow-primary/10 dark:border-gradient-gray',
       )}
     >
       {/* Enhanced background gradients */}
       <div className="absolute inset-0 bg-gradient-card opacity-50" />
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-all duration-500" />
-      
+
       {/* Subtle border glow effect */}
       <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-0 group-hover:opacity-50 transition-all duration-500 blur-sm" />
 
@@ -99,15 +93,15 @@ const PromptCardComponent = memo(function PromptCard({
                 variant="ghost"
                 size="icon"
                 className={cn(
-                  "h-6 w-6 hover:scale-110 transition-all duration-200 hover-glow",
-                  card.pinned 
-                    ? "text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/50 fill-purple-600" 
-                    : "text-muted-foreground hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/50"
+                  'h-6 w-6 hover:scale-110 transition-all duration-200 hover-glow',
+                  card.pinned
+                    ? 'text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/50 fill-purple-600'
+                    : 'text-muted-foreground hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950/50',
                 )}
                 onClick={() => onPin?.(card)}
-                title={card.pinned ? "Unpin prompt" : "Pin prompt"}
+                title={card.pinned ? 'Unpin prompt' : 'Pin prompt'}
               >
-                <Pin className={cn("h-3 w-3", card.pinned && "fill-current")} />
+                <Pin className={cn('h-3 w-3', card.pinned && 'fill-current')} />
               </Button>
               {card.actions.edit && (
                 <Button
