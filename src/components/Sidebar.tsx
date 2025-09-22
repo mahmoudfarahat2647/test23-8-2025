@@ -319,32 +319,36 @@ export function Sidebar({
                           key={`${category}-${tag}`}
                           className="group relative"
                         >
-                          <button
-                            type="button"
+                          <div
                             className={cn(
-                              'flex items-center gap-2 p-1.5 rounded-md cursor-pointer transition-all duration-200 hover:bg-primary/5',
+                              'flex items-center gap-2 p-1.5 rounded-md transition-all duration-200 hover:bg-primary/5',
                               isTagActive && 'bg-primary/10',
                             )}
-                            onClick={() => onTagToggle(tag)}
                           >
-                            <Tag
-                              className={cn(
-                                'h-3 w-3',
-                                isTagActive
-                                  ? 'text-primary'
-                                  : 'text-muted-foreground',
-                              )}
-                            />
-                            <span
-                              className={cn(
-                                'text-xs',
-                                isTagActive
-                                  ? 'text-primary font-medium'
-                                  : 'text-muted-foreground',
-                              )}
+                            <button
+                              type="button"
+                              className="flex items-center gap-2 flex-1 cursor-pointer"
+                              onClick={() => onTagToggle(tag)}
                             >
-                              {tag}
-                            </span>
+                              <Tag
+                                className={cn(
+                                  'h-3 w-3',
+                                  isTagActive
+                                    ? 'text-primary'
+                                    : 'text-muted-foreground',
+                                )}
+                              />
+                              <span
+                                className={cn(
+                                  'text-xs',
+                                  isTagActive
+                                    ? 'text-primary font-medium'
+                                    : 'text-muted-foreground',
+                                )}
+                              >
+                                {tag}
+                              </span>
+                            </button>
 
                             {canDeleteTag && (
                               <Button
@@ -360,7 +364,7 @@ export function Sidebar({
                                 <X className="h-3 w-3" />
                               </Button>
                             )}
-                          </button>
+                          </div>
                         </div>
                       );
                     })}

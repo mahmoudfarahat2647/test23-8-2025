@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import { CreatePromptDialog } from '@/components/CreatePromptDialog';
 import { Filters } from '@/components/Filters';
 import { FloatingActionButton } from '@/components/FloatingActionButton';
 import { Header } from '@/components/Header';
@@ -10,6 +10,7 @@ import { PromptCard } from '@/components/PromptCard';
 import { Sidebar } from '@/components/Sidebar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { usePerformanceOptimization } from '@/hooks/usePerformanceOptimization';
 import type {
   CategoryType,
   PromptBoxData,
@@ -34,6 +35,7 @@ const initialPromptBoxData: PromptBoxData = {
   },
   promptCards: [
     {
+      id: 'creative-writing-assistant',
       title: 'Creative Writing Assistant',
       description:
         'A powerful prompt for generating creative stories, poems, and artistic content with vivid imagery and compelling narratives.',
@@ -43,11 +45,11 @@ const initialPromptBoxData: PromptBoxData = {
       actions: {
         edit: true,
         delete: true,
-        share: true,
         copy: true,
       },
     },
     {
+      id: 'frontend-code-generator',
       title: 'Frontend Code Generator',
       description:
         'Generate modern React components with TypeScript, Tailwind CSS, and best practices for responsive design.',
@@ -57,11 +59,11 @@ const initialPromptBoxData: PromptBoxData = {
       actions: {
         edit: true,
         delete: true,
-        share: true,
         copy: true,
       },
     },
     {
+      id: 'backend-api-designer',
       title: 'Backend API Designer',
       description:
         'Create robust REST APIs with proper authentication, validation, and documentation following industry standards.',
@@ -71,11 +73,11 @@ const initialPromptBoxData: PromptBoxData = {
       actions: {
         edit: true,
         delete: true,
-        share: true,
         copy: true,
       },
     },
     {
+      id: 'digital-art-concept',
       title: 'Digital Art Concept',
       description:
         'Generate detailed prompts for AI art generation with specific styles, lighting, and composition instructions.',
@@ -85,11 +87,11 @@ const initialPromptBoxData: PromptBoxData = {
       actions: {
         edit: true,
         delete: true,
-        share: true,
         copy: true,
       },
     },
     {
+      id: 'productivity-workflow',
       title: 'Productivity Workflow',
       description:
         'Optimize your daily workflow with smart automation suggestions and time management strategies.',
@@ -99,11 +101,11 @@ const initialPromptBoxData: PromptBoxData = {
       actions: {
         edit: true,
         delete: true,
-        share: true,
         copy: true,
       },
     },
     {
+      id: 'code-review-assistant',
       title: 'Code Review Assistant',
       description:
         'Comprehensive code review prompts that check for security, performance, and maintainability issues.',
@@ -113,7 +115,6 @@ const initialPromptBoxData: PromptBoxData = {
       actions: {
         edit: true,
         delete: true,
-        share: true,
         copy: true,
       },
     },
@@ -121,6 +122,8 @@ const initialPromptBoxData: PromptBoxData = {
 };
 
 export default function PromptBox() {
+  const router = useRouter();
+  const { optimizedFilter } = usePerformanceOptimization();
   const [promptBoxData, setPromptBoxData] =
     useState<PromptBoxData>(initialPromptBoxData);
   const [searchValue, setSearchValue] = useState('');
@@ -128,12 +131,81 @@ export default function PromptBox() {
     'ALL',
   ]);
   const [activeTags, setActiveTags] = useState<TagType[]>(['ALL']);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [editingCard, setEditingCard] = useState<PromptCardType | null>(null);
   const [deletingCard, setDeletingCard] = useState<PromptCardType | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  const handleCategoryToggle = (category: CategoryType) => {
+  // Listen for new categories and tags from the editor
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const editorData = localStorage.getItem('promptEditor_data');
+      if (editorData) {
+        try {
+          const { newCategories, newTags, prompt } = JSON.parse(editorData);
+          
+          // Update the prompt box data with new categories and tags
+          setPromptBoxData((prev) => {
+            const updatedCategories = [
+              ...new Set([...prev.filters.categories, ...newCategories])
+            ];
+            const updatedTags = [
+              ...new Set([...prev.filters.tags, ...newTags])
+            ];
+            
+            // Handle prompt creation/update
+            let updatedPrompts = prev.promptCards;
+            if (prompt.id && prev.promptCards.find(p => p.id === prompt.id)) {
+              // Update existing prompt
+              updatedPrompts = prev.promptCards.map(p => 
+                p.id === prompt.id ? { ...prompt, actions: { edit: true, delete: true, copy: true } } : p
+              );
+            } else {
+              // Add new prompt with generated ID
+              const newPrompt = {
+                ...prompt,
+                id: prompt.id || prompt.title.toLowerCase().replace(/\s+/g, '-'),
+                actions: { edit: true, delete: true, copy: true }
+              };
+              updatedPrompts = [...prev.promptCards, newPrompt];
+            }
+            
+            return {
+              ...prev,
+              filters: {
+                categories: updatedCategories,
+                tags: updatedTags,
+              },
+              promptCards: updatedPrompts,
+            };
+          });
+          
+          // Clear the localStorage after processing
+          localStorage.removeItem('promptEditor_data');
+          
+          // Show success message
+          if (newCategories.length > 0 || newTags.length > 0) {
+            const additions = [];
+            if (newCategories.length > 0) additions.push(`${newCategories.length} new categories`);
+            if (newTags.length > 0) additions.push(`${newTags.length} new tags`);
+            toast.success(`Added ${additions.join(' and ')} successfully!`);
+          }
+      } catch (error) {
+        console.error('Error processing editor data:', error);
+      }
+    }
+  };
+
+    // Check for data on component mount
+    handleStorageChange();
+    
+    // Listen for storage changes (in case of multiple tabs)
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  const handleCategoryToggle = useCallback((category: CategoryType) => {
     if (category === 'ALL') {
       setActiveCategories(['ALL']);
       setActiveTags(['ALL']); // Reset tags when ALL category is selected
@@ -148,9 +220,9 @@ export default function PromptBox() {
         }
       });
     }
-  };
+  }, []);
 
-  const handleTagToggle = (tag: TagType) => {
+  const handleTagToggle = useCallback((tag: TagType) => {
     if (tag === 'ALL') {
       setActiveTags(['ALL']);
     } else {
@@ -164,10 +236,10 @@ export default function PromptBox() {
         }
       });
     }
-  };
+  }, []);
 
   const filteredCards = useMemo(() => {
-    return promptBoxData.promptCards.filter((card) => {
+    return optimizedFilter(promptBoxData.promptCards, (card) => {
       // Search filter
       const matchesSearch =
         searchValue === '' ||
@@ -186,16 +258,16 @@ export default function PromptBox() {
 
       return matchesSearch && matchesCategory && matchesTag;
     });
-  }, [searchValue, activeCategories, activeTags, promptBoxData.promptCards]);
+  }, [searchValue, activeCategories, activeTags, promptBoxData.promptCards, optimizedFilter]);
 
   // Copy prompt content to clipboard
-  const handleCopyPrompt = async (card: PromptCardType) => {
+  const handleCopyPrompt = useCallback(async (card: PromptCardType) => {
     try {
-      const promptText = `Title: ${card.title}\n\nDescription: ${card.description}\n\nRating: ${card.rating}/5\n\nCategories: ${card.categories.join(', ')}\n\nTags: ${card.tags.join(', ')}`;
+      const promptText = card.description;
 
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(promptText);
-        toast.success(`Prompt "${card.title}" copied to clipboard!`);
+        toast.success(`Description copied to clipboard!`);
       } else {
         // Fallback for older browsers
         const textArea = document.createElement('textarea');
@@ -205,55 +277,39 @@ export default function PromptBox() {
         textArea.select();
         try {
           document.execCommand('copy');
-          toast.success(`Prompt "${card.title}" copied to clipboard!`);
+          toast.success(`Description copied to clipboard!`);
         } catch {
           // Fallback copy failed - show error to user
-          toast.error('Failed to copy prompt to clipboard');
+          toast.error('Failed to copy description to clipboard');
         }
         document.body.removeChild(textArea);
       }
     } catch {
       // Clipboard operation failed - show error to user
-      toast.error('Failed to copy prompt to clipboard');
+      toast.error('Failed to copy description to clipboard');
     }
-  };
+  }, []);
 
-  // Edit prompt
-  const handleEditPrompt = (card: PromptCardType) => {
-    setEditingCard(card);
-    setIsCreateDialogOpen(true);
-  };
-
-  // Share prompt
-  const handleSharePrompt = async (card: PromptCardType) => {
-    const shareData = {
-      title: `PromptBox: ${card.title}`,
-      text: card.description,
-      url: window.location.href,
-    };
-
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        toast.success(`Prompt "${card.title}" shared successfully!`);
-      } else {
-        // Fallback: copy share text to clipboard
-        const shareText = `Check out this prompt: "${card.title}"\n\n${card.description}\n\nView more at: ${window.location.href}`;
-        await navigator.clipboard.writeText(shareText);
-        toast.success(`Share link copied to clipboard!`);
-      }
-    } catch {
-      // Share operation failed - show error to user
-      toast.error('Failed to share prompt');
-    }
-  };
+  // Edit prompt - navigate to editor
+  const handleEditPrompt = useCallback((card: PromptCardType) => {
+    // Generate a simple ID if the card doesn't have one
+    const cardId = card.id || card.title.toLowerCase().replace(/\s+/g, '-');
+    
+    // Store current filters in localStorage for the editor to access
+    localStorage.setItem('promptbox_filters', JSON.stringify({
+      categories: promptBoxData.filters.categories,
+      tags: promptBoxData.filters.tags
+    }));
+    
+    router.push(`/editor?id=${encodeURIComponent(cardId)}`);
+  }, [router, promptBoxData.filters]);
 
   // Delete prompt
-  const handleDeletePrompt = (card: PromptCardType) => {
+  const handleDeletePrompt = useCallback((card: PromptCardType) => {
     setDeletingCard(card);
-  };
+  }, []);
 
-  const confirmDelete = () => {
+  const confirmDelete = useCallback(() => {
     if (deletingCard) {
       setPromptBoxData((prev) => {
         const newCards = prev.promptCards.filter(
@@ -271,85 +327,26 @@ export default function PromptBox() {
       toast.success(`Prompt "${deletingCard.title}" deleted successfully!`);
       setDeletingCard(null);
     }
-  };
+  }, [deletingCard]);
 
-  const cancelDelete = () => {
+  const cancelDelete = useCallback(() => {
     setDeletingCard(null);
-  };
+  }, []);
 
-  const handleCreatePrompt = () => {
-    setIsCreateDialogOpen(true);
-  };
+  const handleCreatePrompt = useCallback(() => {
+    // Store current filters in localStorage for the editor to access
+    localStorage.setItem('promptbox_filters', JSON.stringify({
+      categories: promptBoxData.filters.categories,
+      tags: promptBoxData.filters.tags
+    }));
+    
+    router.push('/editor');
+  }, [router, promptBoxData.filters]);
 
-  const handleSaveNewPrompt = (newPrompt: Omit<PromptCardType, 'actions'>) => {
-    const promptWithActions: PromptCardType = {
-      ...newPrompt,
-      actions: {
-        edit: true,
-        delete: true,
-        share: true,
-        copy: true,
-      },
-    };
 
-    if (editingCard) {
-      // Update existing prompt
-      setPromptBoxData((prev) => {
-        // Update filters with new categories and tags
-        const updatedCategories = [
-          ...new Set([...prev.filters.categories, ...newPrompt.categories]),
-        ];
-        const updatedTags = [
-          ...new Set([...prev.filters.tags, ...newPrompt.tags]),
-        ];
-
-        return {
-          ...prev,
-          filters: {
-            categories: updatedCategories,
-            tags: updatedTags,
-          },
-          promptCards: prev.promptCards.map((p) =>
-            p.title === editingCard.title &&
-            p.description === editingCard.description
-              ? promptWithActions
-              : p,
-          ),
-        };
-      });
-      toast.success(`Prompt "${newPrompt.title}" updated successfully!`);
-      setEditingCard(null);
-    } else {
-      // Create new prompt
-      setPromptBoxData((prev) => {
-        // Update filters with new categories and tags
-        const updatedCategories = [
-          ...new Set([...prev.filters.categories, ...newPrompt.categories]),
-        ];
-        const updatedTags = [
-          ...new Set([...prev.filters.tags, ...newPrompt.tags]),
-        ];
-
-        return {
-          ...prev,
-          filters: {
-            categories: updatedCategories,
-            tags: updatedTags,
-          },
-          promptCards: [...prev.promptCards, promptWithActions],
-        };
-      });
-      toast.success(`New prompt "${newPrompt.title}" created successfully!`);
-    }
-  };
-
-  const handleCloseDialog = () => {
-    setIsCreateDialogOpen(false);
-    setEditingCard(null);
-  };
 
   // Delete category from filters and remove from all prompts
-  const handleCategoryDelete = (categoryToDelete: CategoryType) => {
+  const handleCategoryDelete = useCallback((categoryToDelete: CategoryType) => {
     if (categoryToDelete === 'ALL') return; // Prevent deleting 'ALL'
 
     setPromptBoxData((prev) => ({
@@ -372,10 +369,10 @@ export default function PromptBox() {
     );
 
     toast.success(`Category "${categoryToDelete}" deleted successfully!`);
-  };
+  }, []);
 
   // Delete tag from filters and remove from all prompts
-  const handleTagDelete = (tagToDelete: TagType) => {
+  const handleTagDelete = useCallback((tagToDelete: TagType) => {
     if (tagToDelete === 'ALL') return; // Prevent deleting 'ALL'
 
     setPromptBoxData((prev) => ({
@@ -394,7 +391,7 @@ export default function PromptBox() {
     setActiveTags((prev) => prev.filter((tag) => tag !== tagToDelete));
 
     toast.success(`Tag "${tagToDelete}" deleted successfully!`);
-  };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-subtle relative overflow-hidden flex h-screen">
@@ -414,7 +411,6 @@ export default function PromptBox() {
       <div className="relative z-20">
         <Sidebar
           categories={promptBoxData.filters.categories}
-          tags={promptBoxData.filters.tags}
           prompts={promptBoxData.promptCards}
           activeCategories={activeCategories}
           activeTags={activeTags}
@@ -444,10 +440,13 @@ export default function PromptBox() {
             </div>
 
             {/* Enhanced Filters - Only show on mobile or when sidebar is collapsed */}
-            <div className={cn(
-              "animate-slide-up lg:hidden",
-              isSidebarCollapsed && "lg:block"
-            )} style={{ animationDelay: '0.2s' }}>
+            <div
+              className={cn(
+                'animate-slide-up lg:hidden',
+                isSidebarCollapsed && 'lg:block',
+              )}
+              style={{ animationDelay: '0.2s' }}
+            >
               <Filters
                 categories={promptBoxData.filters.categories}
                 tags={promptBoxData.filters.tags}
@@ -465,7 +464,6 @@ export default function PromptBox() {
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto scrollbar-thin">
           <div className="container mx-auto px-3 sm:px-4 lg:px-6 pb-16 max-w-6xl">
-
             {/* Enhanced Prompt Cards Grid */}
             {filteredCards.length > 0 ? (
               <div
@@ -483,7 +481,6 @@ export default function PromptBox() {
                         card={card}
                         onEdit={handleEditPrompt}
                         onDelete={handleDeletePrompt}
-                        onShare={handleSharePrompt}
                         onCopy={handleCopyPrompt}
                       />
                     </div>
@@ -491,7 +488,10 @@ export default function PromptBox() {
                 </div>
               </div>
             ) : (
-              <div className="animate-fade-in" style={{ animationDelay: '0.6s' }}>
+              <div
+                className="animate-fade-in"
+                style={{ animationDelay: '0.6s' }}
+              >
                 <div className="flex flex-col items-center justify-center py-14 text-center relative">
                   {/* Enhanced empty state */}
                   <div className="relative">
@@ -518,8 +518,8 @@ export default function PromptBox() {
                         No prompts found
                       </h3>
                       <p className="text-muted-foreground text-sm max-w-sm leading-relaxed mb-4">
-                        Try adjusting your search criteria or create a new prompt
-                        to get started on your AI journey.
+                        Try adjusting your search criteria or create a new
+                        prompt to get started on your AI journey.
                       </p>
                       <Button
                         onClick={handleCreatePrompt}
@@ -539,15 +539,6 @@ export default function PromptBox() {
 
       {/* Enhanced Floating Action Button */}
       <FloatingActionButton onClick={handleCreatePrompt} />
-
-      <CreatePromptDialog
-        isOpen={isCreateDialogOpen}
-        onClose={handleCloseDialog}
-        onSave={handleSaveNewPrompt}
-        availableCategories={promptBoxData.filters.categories}
-        availableTags={promptBoxData.filters.tags}
-        editingPrompt={editingCard}
-      />
 
       {/* Enhanced Delete Confirmation Dialog */}
       {deletingCard && (

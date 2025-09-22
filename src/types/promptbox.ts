@@ -1,13 +1,14 @@
 export interface PromptCard {
+  id?: string;
   title: string;
   description: string;
+  content?: string; // Markdown content for full editor
   rating: number;
   tags: string[];
   categories: string[];
   actions: {
     edit: boolean;
     delete: boolean;
-    share: boolean;
     copy: boolean;
   };
 }

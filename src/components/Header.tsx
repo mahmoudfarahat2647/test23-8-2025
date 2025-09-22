@@ -14,7 +14,13 @@ interface HeaderProps {
   totalCount: number;
 }
 
-export function Header({ config, searchValue, onSearchChange, filteredCount, totalCount }: HeaderProps) {
+export function Header({
+  config,
+  searchValue,
+  onSearchChange,
+  filteredCount,
+  totalCount,
+}: HeaderProps) {
   return (
     <header className="mb-6 lg:mb-8">
       {/* Background gradient overlay */}
@@ -29,9 +35,7 @@ export function Header({ config, searchValue, onSearchChange, filteredCount, tot
                 <div className="w-2 h-8 bg-gradient-to-b from-primary to-primary/50 rounded-full" />
                 <div>
                   <p className="text-lg font-bold text-foreground">
-                    <span className="text-primary">
-                      {filteredCount}
-                    </span>{' '}
+                    <span className="text-primary">{filteredCount}</span>{' '}
                     {filteredCount === 1 ? 'Prompt' : 'Prompts'} Found
                   </p>
                   <p className="text-sm text-muted-foreground">

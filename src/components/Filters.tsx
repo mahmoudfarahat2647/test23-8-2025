@@ -1,6 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +14,6 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import type { CategoryType, TagType } from '@/types/promptbox';
-import { useState } from 'react';
 
 interface DeleteConfirmationDialogProps {
   isOpen: boolean;
@@ -43,9 +43,10 @@ function DeleteConfirmationDialog({
             Delete {itemType === 'category' ? 'Category' : 'Tag'}
           </DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete the {itemType} &ldquo;{itemName}&rdquo;?
-            {itemType === 'category' 
-              ? ' This will remove the category from all prompts.' 
+            Are you sure you want to delete the {itemType} &ldquo;{itemName}
+            &rdquo;?
+            {itemType === 'category'
+              ? ' This will remove the category from all prompts.'
               : ' This will remove the tag from all prompts.'}
             <br />
             <span className="font-medium text-destructive mt-2 block">
@@ -189,7 +190,7 @@ function FilterSection({
           );
         })}
       </div>
-      
+
       <DeleteConfirmationDialog
         isOpen={deleteDialog.isOpen}
         onClose={handleDeleteCancel}

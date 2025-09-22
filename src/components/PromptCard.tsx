@@ -1,6 +1,7 @@
 'use client';
 
 import { Copy, Edit, Star, Trash2 } from 'lucide-react';
+import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -49,7 +50,7 @@ function StarRating({
   );
 }
 
-export function PromptCard({
+const PromptCardComponent = memo(function PromptCard({
   card,
   onEdit,
   onDelete,
@@ -186,4 +187,6 @@ export function PromptCard({
       </div>
     </Card>
   );
-}
+});
+
+export { PromptCardComponent as PromptCard };
