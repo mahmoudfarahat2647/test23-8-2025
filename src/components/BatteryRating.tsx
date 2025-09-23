@@ -17,7 +17,7 @@ export function BatteryRating({
 }: BatteryRatingProps) {
   // For vertical battery, we always show 6 segments regardless of maxRating
   const verticalSegments = 6;
-  
+
   // Determine color based on fixed positions for vertical battery (bottom to top)
   // 2 green bars (positions 1,2), 1 yellow bar (position 3), 3 red bars (positions 4,5,6)
   const getVerticalSegmentColor = (segmentIndex: number) => {
@@ -34,7 +34,7 @@ export function BatteryRating({
     // Rating 2: 2 segments at 100%, rest at 30%
     // etc.
     if (rating === 0) return 'opacity-30';
-    
+
     // Map 5-point rating to 6 segments
     const activeSegments = Math.round((rating / maxRating) * verticalSegments);
     return segmentIndex <= activeSegments ? 'opacity-100' : 'opacity-30';
@@ -50,9 +50,35 @@ export function BatteryRating({
     return 'bg-green-500'; // Green for high rating
   };
 
+  // Handle keyboard events for accessibility
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!onClick) return;
+
+    switch (e.key) {
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        // For simplicity, we'll set a default rating when activated via keyboard
+        onClick(rating === 0 ? maxRating : 0);
+        break;
+      case 'ArrowUp':
+      case 'ArrowRight':
+        e.preventDefault();
+        onClick(Math.min(maxRating, rating + 1));
+        break;
+      case 'ArrowDown':
+      case 'ArrowLeft':
+        e.preventDefault();
+        onClick(Math.max(0, rating - 1));
+        break;
+      default:
+        break;
+    }
+  };
+
   if (isVertical) {
     return (
-      <div 
+      <div
         className="flex flex-col items-center justify-end w-3 h-16 rounded-sm border border-border cursor-pointer group pl-2" // Added pl-2 for left padding
         onClick={(e) => {
           e.stopPropagation();
@@ -61,10 +87,18 @@ export function BatteryRating({
             const rect = e.currentTarget.getBoundingClientRect();
             const clickY = e.clientY - rect.top;
             const segmentHeight = rect.height / maxRating;
-            const clickedSegment = maxRating - Math.floor(clickY / segmentHeight);
+            const clickedSegment =
+              maxRating - Math.floor(clickY / segmentHeight);
             onClick(clickedSegment === rating ? 0 : clickedSegment);
           }
         }}
+        onKeyDown={handleKeyDown}
+        role="slider"
+        aria-valuenow={rating}
+        aria-valuemin={0}
+        aria-valuemax={maxRating}
+        aria-label="Rating control"
+        tabIndex={0}
       >
         <div className="relative w-full h-full flex flex-col-reverse">
           {Array.from({ length: verticalSegments }, (_, index) => {
@@ -75,7 +109,7 @@ export function BatteryRating({
                 className={cn(
                   'flex-1 transition-all duration-300',
                   getVerticalSegmentColor(segmentNumber),
-                  getVerticalSegmentOpacity(segmentNumber)
+                  getVerticalSegmentOpacity(segmentNumber),
                 )}
               />
             );
@@ -86,7 +120,7 @@ export function BatteryRating({
   }
 
   return (
-    <div 
+    <div
       className="flex items-center gap-1 h-4 cursor-pointer group pl-2" // Added pl-2 for left padding
       onClick={(e) => {
         e.stopPropagation();
@@ -99,6 +133,13 @@ export function BatteryRating({
           onClick(clickedSegment === rating ? 0 : clickedSegment);
         }
       }}
+      onKeyDown={handleKeyDown}
+      role="slider"
+      aria-valuenow={rating}
+      aria-valuemin={0}
+      aria-valuemax={maxRating}
+      aria-label="Rating control"
+      tabIndex={0}
     >
       {Array.from({ length: maxRating }, (_, index) => {
         const segmentNumber = index + 1;
@@ -108,7 +149,7 @@ export function BatteryRating({
             className={cn(
               'h-3 flex-1 rounded-sm transition-all duration-300',
               getHorizontalSegmentColor(segmentNumber),
-              segmentNumber <= rating ? 'opacity-100' : 'opacity-30'
+              segmentNumber <= rating ? 'opacity-100' : 'opacity-30',
             )}
           />
         );

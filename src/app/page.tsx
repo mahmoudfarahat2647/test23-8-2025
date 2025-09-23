@@ -18,120 +18,66 @@ import type {
   TagType,
 } from '@/types/promptbox';
 
-// Initial data based on the provided JSON structure
-const initialPromptBoxData: PromptBoxData = {
-  app: 'PromptBox',
-  header: {
-    title: 'PROMPTBOX',
-    search: {
-      placeholder: 'Search',
-      icon: 'search-icon',
-      profileIcon: true,
-    },
-  },
-  filters: {
-    categories: ['ALL', 'vibe', 'artist', 'writing', 'frontend', 'backend'],
-    tags: ['ALL', 'chatgpt', 'super', 'prompt', 'work', 'vit'],
-  },
-  promptCards: [
-    {
-      id: 'creative-writing-assistant',
-      title: 'Creative Writing Assistant',
-      description:
-        'A powerful prompt for generating creative stories, poems, and artistic content with vivid imagery and compelling narratives.',
-      rating: 2, // good
-      tags: ['chatgpt', 'prompt', 'work'],
-      categories: ['writing', 'vibe'],
-      pinned: false,
-      actions: {
-        edit: true,
-        delete: true,
-        copy: true,
+// Load data from localStorage or use initial data
+const loadInitialData = (): PromptBoxData => {
+  if (typeof window !== 'undefined') {
+    const savedData = localStorage.getItem('promptBoxData');
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        // Ensure the parsed data has the correct structure
+        if (parsedData?.promptCards && parsedData.filters) {
+          // Clean up unused categories and tags
+          const allCategories = new Set<string>(['ALL']);
+          const allTags = new Set<string>(['ALL']);
+          
+          // Collect all categories and tags from all prompts
+          parsedData.promptCards.forEach((card: any) => {
+            card.categories.forEach((cat: string) => allCategories.add(cat));
+            card.tags.forEach((tag: string) => allTags.add(tag));
+          });
+          
+          // Update filters to only include categories and tags that are actually used
+          const cleanedData: PromptBoxData = {
+            ...parsedData,
+            filters: {
+              categories: Array.from(allCategories),
+              tags: Array.from(allTags),
+            },
+          };
+          
+          return cleanedData;
+        }
+      } catch (_error) {}
+    }
+  }
+
+  // Start with empty data structure for a clean slate
+  return {
+    app: 'PromptBox',
+    header: {
+      title: 'PROMPTBOX',
+      search: {
+        placeholder: 'Search',
+        icon: 'search-icon',
+        profileIcon: true,
       },
     },
-    {
-      id: 'frontend-code-generator',
-      title: 'Frontend Code Generator',
-      description:
-        'Generate modern React components with TypeScript, Tailwind CSS, and best practices for responsive design.',
-      rating: 3, // excellent
-      tags: ['super', 'work', 'vit'],
-      categories: ['frontend'],
-      pinned: false,
-      actions: {
-        edit: true,
-        delete: true,
-        copy: true,
-      },
+    filters: {
+      categories: ['ALL'],
+      tags: ['ALL'],
     },
-    {
-      id: 'backend-api-designer',
-      title: 'Backend API Designer',
-      description:
-        'Create robust REST APIs with proper authentication, validation, and documentation following industry standards.',
-      rating: 2, // good
-      tags: ['work', 'super'],
-      categories: ['backend'],
-      pinned: false,
-      actions: {
-        edit: true,
-        delete: true,
-        copy: true,
-      },
-    },
-    {
-      id: 'digital-art-concept',
-      title: 'Digital Art Concept',
-      description:
-        'Generate detailed prompts for AI art generation with specific styles, lighting, and composition instructions.',
-      rating: 1, // temp
-      tags: ['prompt', 'vit'],
-      categories: ['artist', 'vibe'],
-      pinned: false,
-      actions: {
-        edit: true,
-        delete: true,
-        copy: true,
-      },
-    },
-    {
-      id: 'productivity-workflow',
-      title: 'Productivity Workflow',
-      description:
-        'Optimize your daily workflow with smart automation suggestions and time management strategies.',
-      rating: 3, // excellent
-      tags: ['work', 'super'],
-      categories: ['vibe'],
-      pinned: false,
-      actions: {
-        edit: true,
-        delete: true,
-        copy: true,
-      },
-    },
-    {
-      id: 'code-review-assistant',
-      title: 'Code Review Assistant',
-      description:
-        'Comprehensive code review prompts that check for security, performance, and maintainability issues.',
-      rating: 2, // good
-      tags: ['chatgpt', 'work'],
-      categories: ['frontend', 'backend'],
-      pinned: false,
-      actions: {
-        edit: true,
-        delete: true,
-        copy: true,
-      },
-    },
-  ],
+    promptCards: [],
+  };
 };
 
 export default function PromptBox() {
   const router = useRouter();
   const { optimizedFilter } = usePerformanceOptimization();
-  const [promptBoxData, setPromptBoxData] =
-    useState<PromptBoxData>(initialPromptBoxData);
+  const [promptBoxData, setPromptBoxData] = useState<PromptBoxData | null>(
+    null,
+  );
+  const [isLoading, setIsLoading] = useState(true);
   const [searchValue, setSearchValue] = useState('');
   const [activeCategories, setActiveCategories] = useState<CategoryType[]>([
     'ALL',
@@ -140,9 +86,33 @@ export default function PromptBox() {
   const [deletingCard, setDeletingCard] = useState<PromptCardType | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
+  // Load data on component mount
+  useEffect(() => {
+    // Load data immediately without timeout to prevent flash of old data
+    const data = loadInitialData();
+    setPromptBoxData(data);
+    setIsLoading(false);
+  }, []);
+
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined' && promptBoxData) {
+      try {
+        localStorage.setItem('promptBoxData', JSON.stringify(promptBoxData));
+      } catch (_error) {}
+    }
+  }, [promptBoxData]);
+
   // Listen for new categories and tags from the editor
   useEffect(() => {
-    const handleStorageChange = () => {
+    const handleStorageChange = (event: StorageEvent) => {
+      // Handle cross-tab storage changes
+      if (event.key === 'promptEditor_data') {
+        processEditorData();
+      }
+    };
+
+    const processEditorData = () => {
       const editorData = localStorage.getItem('promptEditor_data');
       if (editorData) {
         try {
@@ -150,6 +120,9 @@ export default function PromptBox() {
 
           // Update the prompt box data with new categories and tags
           setPromptBoxData((prev) => {
+            if (!prev) return prev;
+
+            // Merge new categories and tags with existing ones
             const updatedCategories = [
               ...new Set([...prev.filters.categories, ...newCategories]),
             ];
@@ -158,58 +131,67 @@ export default function PromptBox() {
             ];
 
             // Handle prompt creation/update
-            let updatedPrompts = prev.promptCards;
-            if (prompt.id && prev.promptCards.find((p) => p.id === prompt.id)) {
+            let updatedPrompts = [...prev.promptCards];
+            const existingPromptIndex = prev.promptCards.findIndex(
+              (p) => p.id === prompt.id,
+            );
+
+            if (existingPromptIndex !== -1) {
               // Update existing prompt
-              updatedPrompts = prev.promptCards.map((p) =>
-                p.id === prompt.id
-                  ? {
-                      ...prompt,
-                      pinned: p.pinned, // Preserve pinned state
-                      actions: { edit: true, delete: true, copy: true },
-                    }
-                  : p,
-              );
+              updatedPrompts[existingPromptIndex] = {
+                ...prompt,
+                pinned: prev.promptCards[existingPromptIndex].pinned, // Preserve pinned state
+                actions: { edit: true, delete: true, copy: true },
+              };
             } else {
-              // Add new prompt with generated ID
+              // Add new prompt
               const newPrompt = {
                 ...prompt,
-                id:
-                  prompt.id || `new-prompt-${Date.now()}`,
+                id: prompt.id || `new-prompt-${Date.now()}`,
                 pinned: false, // New prompts are not pinned by default
                 actions: { edit: true, delete: true, copy: true },
               };
               updatedPrompts = [...prev.promptCards, newPrompt];
             }
 
-            return {
+            // Clean up unused categories and tags
+            const allCategories = new Set<string>();
+            const allTags = new Set<string>();
+            
+            // Collect all categories and tags from all prompts
+            updatedPrompts.forEach((card) => {
+              card.categories.forEach((cat) => allCategories.add(cat));
+              card.tags.forEach((tag) => allTags.add(tag));
+            });
+            
+            // Ensure 'ALL' is always present
+            allCategories.add('ALL');
+            allTags.add('ALL');
+
+            const updatedData: PromptBoxData = {
               ...prev,
               filters: {
-                categories: updatedCategories,
-                tags: updatedTags,
+                categories: Array.from(allCategories),
+                tags: Array.from(allTags),
               },
               promptCards: updatedPrompts,
             };
+            return updatedData;
           });
 
           // Clear the localStorage after processing
           localStorage.removeItem('promptEditor_data');
 
           // Show success message
-          if (newCategories.length > 0 || newTags.length > 0) {
-            const additions = [];
-            if (newCategories.length > 0)
-              additions.push(`${newCategories.length} new categories`);
-            if (newTags.length > 0)
-              additions.push(`${newTags.length} new tags`);
-            toast.success(`Added ${additions.join(' and ')} successfully!`);
-          }
-        } catch (_error) {}
+          toast.success('Prompt saved successfully!');
+        } catch (_error) {
+          toast.error('Failed to process prompt data. Please try again.');
+        }
       }
     };
 
     // Check for data on component mount
-    handleStorageChange();
+    processEditorData();
 
     // Listen for storage changes (in case of multiple tabs)
     window.addEventListener('storage', handleStorageChange);
@@ -253,6 +235,8 @@ export default function PromptBox() {
   }, []);
 
   const filteredCards = useMemo(() => {
+    if (!promptBoxData) return [];
+
     const filtered = optimizedFilter(promptBoxData.promptCards, (card) => {
       // Search filter
       const matchesSearch =
@@ -263,7 +247,9 @@ export default function PromptBox() {
       // Category filter - if no categories, show in ALL filter
       const matchesCategory =
         activeCategories.includes('ALL') ||
-        card.categories.some((category) => activeCategories.includes(category)) ||
+        card.categories.some((category) =>
+          activeCategories.includes(category),
+        ) ||
         (card.categories.length === 0 && activeCategories.includes('ALL'));
 
       // Tag filter - if no tags, show in ALL filter
@@ -285,19 +271,10 @@ export default function PromptBox() {
     searchValue,
     activeCategories,
     activeTags,
-    promptBoxData.promptCards,
+    promptBoxData?.promptCards,
     optimizedFilter,
+    promptBoxData,
   ]);
-
-  // Map rating value to stat label
-  const getStatLabel = (ratingValue: number) => {
-    switch (ratingValue) {
-      case 1: return 'Temp';
-      case 2: return 'Good';
-      case 3: return 'Excellent';
-      default: return 'N';
-    }
-  };
 
   // Copy prompt content to clipboard
   const handleCopyPrompt = useCallback(async (card: PromptCardType) => {
@@ -332,8 +309,13 @@ export default function PromptBox() {
   // Edit prompt - navigate to editor
   const handleEditPrompt = useCallback(
     (card: PromptCardType) => {
+      if (!promptBoxData) return;
+
       // Generate a simple ID if the card doesn't have one
-      const cardId = card.id || card.title.toLowerCase().replace(/\s+/g, '-') || `prompt-${Date.now()}`;
+      const cardId =
+        card.id ||
+        card.title.toLowerCase().replace(/\s+/g, '-') ||
+        `prompt-${Date.now()}`;
 
       // Store current filters in localStorage for the editor to access
       localStorage.setItem(
@@ -346,7 +328,7 @@ export default function PromptBox() {
 
       router.push(`/editor?id=${encodeURIComponent(cardId)}`);
     },
-    [router, promptBoxData.filters],
+    [router, promptBoxData],
   );
 
   // Delete prompt
@@ -355,26 +337,52 @@ export default function PromptBox() {
   }, []);
 
   const confirmDelete = useCallback(() => {
-    if (deletingCard) {
+    if (deletingCard && promptBoxData) {
       setPromptBoxData((prev) => {
+        if (!prev) return prev;
+        
+        // Remove the prompt
         const newCards = prev.promptCards.filter(
-          (p) => p.id !== deletingCard.id
+          (p) => p.id !== deletingCard.id,
         );
-        return {
+        
+        // Find categories and tags that are no longer used
+        const allCategories = new Set<string>();
+        const allTags = new Set<string>();
+        
+        // Collect all categories and tags from remaining prompts
+        newCards.forEach((card) => {
+          card.categories.forEach((cat) => allCategories.add(cat));
+          card.tags.forEach((tag) => allTags.add(tag));
+        });
+        
+        // Ensure 'ALL' is always present
+        allCategories.add('ALL');
+        allTags.add('ALL');
+        
+        // Update filters to only include categories and tags that are still used
+        const updatedData: PromptBoxData = {
           ...prev,
+          filters: {
+            categories: Array.from(allCategories),
+            tags: Array.from(allTags),
+          },
           promptCards: newCards,
         };
+        return updatedData;
       });
       toast.success(`Prompt "${deletingCard.title}" deleted successfully!`);
       setDeletingCard(null);
     }
-  }, [deletingCard]);
+  }, [deletingCard, promptBoxData]);
 
   const cancelDelete = useCallback(() => {
     setDeletingCard(null);
   }, []);
 
   const handleCreatePrompt = useCallback(() => {
+    if (!promptBoxData) return;
+
     // Store current filters in localStorage for the editor to access
     localStorage.setItem(
       'promptbox_filters',
@@ -385,93 +393,157 @@ export default function PromptBox() {
     );
 
     router.push('/editor');
-  }, [router, promptBoxData.filters]);
+  }, [router, promptBoxData]);
 
   // Delete category from filters and remove from all prompts
-  const handleCategoryDelete = useCallback((categoryToDelete: CategoryType) => {
-    if (categoryToDelete === 'ALL') return; // Prevent deleting 'ALL'
+  const handleCategoryDelete = useCallback(
+    (categoryToDelete: CategoryType) => {
+      if (categoryToDelete === 'ALL') return; // Prevent deleting 'ALL'
+      if (!promptBoxData) return;
 
-    setPromptBoxData((prev) => ({
-      ...prev,
-      filters: {
-        ...prev.filters,
-        categories: prev.filters.categories.filter(
-          (cat) => cat !== categoryToDelete,
-        ),
-      },
-      promptCards: prev.promptCards.map((card) => ({
-        ...card,
-        categories: card.categories.filter((cat) => cat !== categoryToDelete),
-      })),
-    }));
+      setPromptBoxData((prev) => {
+        if (!prev) return prev;
+        
+        // Remove category from all prompts
+        const updatedPrompts = prev.promptCards.map((card) => ({
+          ...card,
+          categories: card.categories.filter(
+            (cat) => cat !== categoryToDelete,
+          ),
+        }));
+        
+        // Update filters to remove the category
+        const updatedData: PromptBoxData = {
+          ...prev,
+          filters: {
+            ...prev.filters,
+            categories: prev.filters.categories.filter(
+              (cat) => cat !== categoryToDelete,
+            ),
+          },
+          promptCards: updatedPrompts,
+        };
+        return updatedData;
+      });
 
-    // Remove from active categories if selected
-    setActiveCategories((prev) =>
-      prev.filter((cat) => cat !== categoryToDelete),
-    );
+      // Remove from active categories if selected
+      setActiveCategories((prev) =>
+        prev.filter((cat) => cat !== categoryToDelete),
+      );
 
-    toast.success(`Category "${categoryToDelete}" deleted successfully!`);
-  }, []);
+      toast.success(`Category "${categoryToDelete}" deleted successfully!`);
+    },
+    [promptBoxData],
+  );
 
   // Delete tag from filters and remove from all prompts
-  const handleTagDelete = useCallback((tagToDelete: TagType) => {
-    if (tagToDelete === 'ALL') return; // Prevent deleting 'ALL'
+  const handleTagDelete = useCallback(
+    (tagToDelete: TagType) => {
+      if (tagToDelete === 'ALL') return; // Prevent deleting 'ALL'
+      if (!promptBoxData) return;
 
-    setPromptBoxData((prev) => ({
-      ...prev,
-      filters: {
-        ...prev.filters,
-        tags: prev.filters.tags.filter((tag) => tag !== tagToDelete),
-      },
-      promptCards: prev.promptCards.map((card) => ({
-        ...card,
-        tags: card.tags.filter((tag) => tag !== tagToDelete),
-      })),
-    }));
+      setPromptBoxData((prev) => {
+        if (!prev) return prev;
+        
+        // Remove tag from all prompts
+        const updatedPrompts = prev.promptCards.map((card) => ({
+          ...card,
+          tags: card.tags.filter((tag) => tag !== tagToDelete),
+        }));
+        
+        // Update filters to remove the tag
+        const updatedData: PromptBoxData = {
+          ...prev,
+          filters: {
+            ...prev.filters,
+            tags: prev.filters.tags.filter((tag) => tag !== tagToDelete),
+          },
+          promptCards: updatedPrompts,
+        };
+        return updatedData;
+      });
 
-    // Remove from active tags if selected
-    setActiveTags((prev) => prev.filter((tag) => tag !== tagToDelete));
+      // Remove from active tags if selected
+      setActiveTags((prev) => prev.filter((tag) => tag !== tagToDelete));
 
-    toast.success(`Tag "${tagToDelete}" deleted successfully!`);
-  }, []);
+      toast.success(`Tag "${tagToDelete}" deleted successfully!`);
+    },
+    [promptBoxData],
+  );
 
   // Pin/unpin prompt
-  const handlePinPrompt = useCallback((card: PromptCardType) => {
-    setPromptBoxData((prev) => ({
-      ...prev,
-      promptCards: prev.promptCards.map((p) =>
-        p.id === card.id ? { ...p, pinned: !p.pinned } : p
-      ),
-    }));
+  const handlePinPrompt = useCallback(
+    (card: PromptCardType) => {
+      if (!promptBoxData) return;
 
-    toast.success(
-      card.pinned
-        ? `Prompt "${card.title}" unpinned successfully!`
-        : `Prompt "${card.title}" pinned successfully!`
-    );
-  }, []);
+      setPromptBoxData((prev) => {
+        if (!prev) return prev;
+        const updatedData: PromptBoxData = {
+          ...prev,
+          promptCards: prev.promptCards.map((p) =>
+            p.id === card.id ? { ...p, pinned: !p.pinned } : p,
+          ),
+        };
+        return updatedData;
+      });
+
+      toast.success(
+        card.pinned
+          ? `Prompt "${card.title}" unpinned successfully!`
+          : `Prompt "${card.title}" pinned successfully!`,
+      );
+    },
+    [promptBoxData],
+  );
 
   // Handle stat change for a prompt (using rating values 1=temp, 2=good, 3=excellent)
-  const handleStatChange = useCallback((card: PromptCardType, stat: 'temp' | 'good' | 'excellent' | null) => {
-    // Convert stat to rating value
-    let ratingValue = 0;
-    switch (stat) {
-      case 'temp': ratingValue = 1; break;
-      case 'good': ratingValue = 2; break;
-      case 'excellent': ratingValue = 3; break;
-      default: ratingValue = 0;
-    }
+  const handleStatChange = useCallback(
+    (card: PromptCardType, stat: 'temp' | 'good' | 'excellent' | null) => {
+      if (!promptBoxData) return;
 
-    setPromptBoxData((prev) => ({
-      ...prev,
-      promptCards: prev.promptCards.map((p) =>
-        p.id === card.id ? { ...p, rating: ratingValue } : p
-      ),
-    }));
+      // Convert stat to rating value
+      let ratingValue = 0;
+      switch (stat) {
+        case 'temp':
+          ratingValue = 1;
+          break;
+        case 'good':
+          ratingValue = 2;
+          break;
+        case 'excellent':
+          ratingValue = 3;
+          break;
+        default:
+          ratingValue = 0;
+      }
 
-    const statText = stat ? stat.charAt(0).toUpperCase() + stat.slice(1) : 'None';
-    toast.success(`Prompt "${card.title}" stat updated to ${statText}!`);
-  }, []);
+      setPromptBoxData((prev) => {
+        if (!prev) return prev;
+        const updatedData: PromptBoxData = {
+          ...prev,
+          promptCards: prev.promptCards.map((p) =>
+            p.id === card.id ? { ...p, rating: ratingValue } : p,
+          ),
+        };
+        return updatedData;
+      });
+
+      const statText = stat
+        ? stat.charAt(0).toUpperCase() + stat.slice(1)
+        : 'None';
+      toast.success(`Prompt "${card.title}" stat updated to ${statText}!`);
+    },
+    [promptBoxData],
+  );
+
+  // Show loading state while data is being loaded
+  if (isLoading || !promptBoxData) {
+    return (
+      <div className="min-h-screen bg-gradient-subtle relative overflow-hidden flex h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-subtle relative overflow-hidden flex h-screen">

@@ -11,7 +11,6 @@ import {
   Plus,
   RotateCcw,
   Save,
-  Star,
   Trash2,
   X,
 } from 'lucide-react';
@@ -987,7 +986,8 @@ ${exampleContent}
                                     'cursor-pointer text-xs px-2 py-0.5 flex-1 justify-start',
                                     categories.includes(category) &&
                                       'bg-gradient-to-r from-cyan-500/10 to-teal-500/10 border-cyan-500/20 text-white',
-                                    !categories.includes(category) && 'text-white'
+                                    !categories.includes(category) &&
+                                      'text-white',
                                   )}
                                   onClick={() => toggleCategory(category)}
                                 >
@@ -1132,7 +1132,7 @@ ${exampleContent}
                                     'cursor-pointer text-xs px-2 py-0.5 flex-1 justify-start',
                                     tags.includes(tag) &&
                                       'bg-gradient-to-r from-cyan-500/10 to-teal-500/10 border-cyan-500/20 text-white',
-                                    !tags.includes(tag) && 'text-white'
+                                    !tags.includes(tag) && 'text-white',
                                   )}
                                   onClick={() => toggleTag(tag)}
                                 >
@@ -1545,5 +1545,3 @@ Once upon a time, in a world where technology...
     </div>
   );
 }
-
-

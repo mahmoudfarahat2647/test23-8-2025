@@ -93,7 +93,7 @@ export function Sidebar({
   onToggleCollapse,
 }: SidebarProps) {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(['ALL']),
+    () => new Set(['ALL']),
   );
   const [deleteDialog, setDeleteDialog] = useState<{
     isOpen: boolean;
@@ -250,16 +250,17 @@ export function Sidebar({
                         size="icon"
                         onClick={() => toggleCategory(category)}
                         className="h-4 w-4 p-0 hover:bg-transparent"
+                        aria-label={isExpanded ? 'Collapse' : 'Expand'}
                       >
-                        {categoryTags.length > 0 ? (
-                          isExpanded ? (
-                            <ChevronDown className="h-3 w-3" />
-                          ) : (
-                            <ChevronRight className="h-3 w-3" />
-                          )
-                        ) : (
-                          <div className="w-3 h-3" />
-                        )}
+                        <div className="w-3 h-3 flex items-center justify-center">
+                          {categoryTags.length > 0 ? (
+                            isExpanded ? (
+                              <ChevronDown className="h-3 w-3" />
+                            ) : (
+                              <ChevronRight className="h-3 w-3" />
+                            )
+                          ) : null}
+                        </div>
                       </Button>
 
                       <button

@@ -1,8 +1,6 @@
 'use client';
 
-import { Star } from 'lucide-react';
 import { useEffect, useId, useState } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -13,7 +11,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
 import type { PromptCard } from '@/types/promptbox';
 
 interface CreatePromptDialogProps {
@@ -92,7 +89,7 @@ export function CreatePromptDialog({
     onClose();
   };
 
-  const toggleCategory = (category: string) => {
+  const _toggleCategory = (category: string) => {
     if (category === 'ALL') return;
     setSelectedCategories((prev) =>
       prev.includes(category)
@@ -101,14 +98,14 @@ export function CreatePromptDialog({
     );
   };
 
-  const toggleTag = (tag: string) => {
+  const _toggleTag = (tag: string) => {
     if (tag === 'ALL') return;
     setSelectedTags((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
     );
   };
 
-  const addNewCategory = () => {
+  const _addNewCategory = () => {
     if (
       newCategory.trim() &&
       !availableCategories.includes(newCategory.trim())
@@ -118,7 +115,7 @@ export function CreatePromptDialog({
     }
   };
 
-  const addNewTag = () => {
+  const _addNewTag = () => {
     if (newTag.trim() && !availableTags.includes(newTag.trim())) {
       setSelectedTags((prev) => [...prev, newTag.trim()]);
       setNewTag('');
@@ -126,22 +123,33 @@ export function CreatePromptDialog({
   };
 
   // Map rating value to stat label
-  const getStatLabel = (ratingValue: number) => {
+  const _getStatLabel = (ratingValue: number) => {
     switch (ratingValue) {
-      case 1: return 'Temp';
-      case 2: return 'Good';
-      case 3: return 'Excellent';
-      default: return 'N';
+      case 1:
+        return 'Temp';
+      case 2:
+        return 'Good';
+      case 3:
+        return 'Excellent';
+      default:
+        return 'N';
     }
   };
 
   // Handle stat selection
-  const handleStatSelect = (stat: 'temp' | 'good' | 'excellent' | null) => {
+  const _handleStatSelect = (stat: 'temp' | 'good' | 'excellent' | null) => {
     switch (stat) {
-      case 'temp': setRating(1); break;
-      case 'good': setRating(2); break;
-      case 'excellent': setRating(3); break;
-      default: setRating(0);
+      case 'temp':
+        setRating(1);
+        break;
+      case 'good':
+        setRating(2);
+        break;
+      case 'excellent':
+        setRating(3);
+        break;
+      default:
+        setRating(0);
     }
   };
 
@@ -225,7 +233,10 @@ export function CreatePromptDialog({
                     multiple
                     value={selectedCategories}
                     onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value);
+                      const selected = Array.from(
+                        e.target.selectedOptions,
+                        (option) => option.value,
+                      );
                       setSelectedCategories(selected);
                     }}
                     className="w-full h-24 px-2 py-1 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent"
@@ -251,7 +262,10 @@ export function CreatePromptDialog({
                     multiple
                     value={selectedTags}
                     onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value);
+                      const selected = Array.from(
+                        e.target.selectedOptions,
+                        (option) => option.value,
+                      );
                       setSelectedTags(selected);
                     }}
                     className="w-full h-24 px-2 py-1 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent"

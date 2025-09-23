@@ -1,12 +1,6 @@
 'use client';
 
-import { Plus, X } from 'lucide-react';
-import { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
 
 interface EditorToolbarProps {
   rating: number;
@@ -49,12 +43,16 @@ export function EditorToolbar({
   onTagsChange,
 }: EditorToolbarProps) {
   // Map rating value to stat label
-  const getStatLabel = (ratingValue: number) => {
+  const _getStatLabel = (ratingValue: number) => {
     switch (ratingValue) {
-      case 1: return 'Temp';
-      case 2: return 'Good';
-      case 3: return 'Excellent';
-      default: return 'N';
+      case 1:
+        return 'Temp';
+      case 2:
+        return 'Good';
+      case 3:
+        return 'Excellent';
+      default:
+        return 'N';
     }
   };
 
@@ -90,7 +88,10 @@ export function EditorToolbar({
                 multiple
                 value={categories}
                 onChange={(e) => {
-                  const selected = Array.from(e.target.selectedOptions, option => option.value);
+                  const selected = Array.from(
+                    e.target.selectedOptions,
+                    (option) => option.value,
+                  );
                   onCategoriesChange(selected);
                 }}
                 className="h-20 px-2 text-xs border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent"
@@ -112,7 +113,10 @@ export function EditorToolbar({
                 multiple
                 value={tags}
                 onChange={(e) => {
-                  const selected = Array.from(e.target.selectedOptions, option => option.value);
+                  const selected = Array.from(
+                    e.target.selectedOptions,
+                    (option) => option.value,
+                  );
                   onTagsChange(selected);
                 }}
                 className="h-20 px-2 text-xs border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent"

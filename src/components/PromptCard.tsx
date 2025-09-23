@@ -1,6 +1,6 @@
 'use client';
 
-import { Copy, Edit, Pin, Star, Trash2 } from 'lucide-react';
+import { Copy, Edit, Pin, Trash2 } from 'lucide-react';
 import { memo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,10 @@ interface PromptCardProps {
   onDelete?: (card: PromptCardType) => void;
   onCopy?: (card: PromptCardType) => void;
   onPin?: (card: PromptCardType) => void;
-  onStatChange?: (card: PromptCardType, stat: 'temp' | 'good' | 'excellent' | null) => void;
+  onStatChange?: (
+    card: PromptCardType,
+    stat: 'temp' | 'good' | 'excellent' | null,
+  ) => void;
 }
 
 const PromptCardComponent = memo(function PromptCard({
@@ -31,10 +34,14 @@ const PromptCardComponent = memo(function PromptCard({
   // 1 = temp, 2 = good, 3 = excellent
   const getStatFromRating = () => {
     switch (card.rating) {
-      case 1: return 'temp';
-      case 2: return 'good';
-      case 3: return 'excellent';
-      default: return null;
+      case 1:
+        return 'temp';
+      case 2:
+        return 'good';
+      case 3:
+        return 'excellent';
+      default:
+        return null;
     }
   };
 
@@ -44,16 +51,31 @@ const PromptCardComponent = memo(function PromptCard({
     // Convert stat back to rating value
     let ratingValue = 0;
     switch (newStat) {
-      case 'temp': ratingValue = 1; break;
-      case 'good': ratingValue = 2; break;
-      case 'excellent': ratingValue = 3; break;
-      default: ratingValue = 0;
+      case 'temp':
+        ratingValue = 1;
+        break;
+      case 'good':
+        ratingValue = 2;
+        break;
+      case 'excellent':
+        ratingValue = 3;
+        break;
+      default:
+        ratingValue = 0;
     }
-    
+
     // Create a new card object with the updated rating
     const updatedCard = { ...card, rating: ratingValue };
     onStatChange?.(updatedCard, newStat);
     setIsStatsOpen(false);
+  };
+
+  // Handle keyboard events for accessibility
+  const handleDropdownKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      setIsStatsOpen(false);
+    }
   };
 
   // Get display properties for the stat
@@ -111,7 +133,8 @@ const PromptCardComponent = memo(function PromptCard({
 
       {/* Stats indicator - positioned at bottom right without taking space */}
       <div className="absolute bottom-2 right-2 z-20">
-        <div
+        <button
+          type="button"
           className={cn(
             'px-2 py-1 rounded-full text-xs font-medium border cursor-pointer hover:opacity-80 transition-opacity min-w-[24px] text-center',
             statProps.bgColor,
@@ -122,25 +145,32 @@ const PromptCardComponent = memo(function PromptCard({
             e.stopPropagation();
             setIsStatsOpen(!isStatsOpen);
           }}
+          aria-haspopup="true"
+          aria-expanded={isStatsOpen}
+          aria-label="Change stat rating"
         >
           {statProps.text}
-        </div>
+        </button>
       </div>
 
       {/* Stats Dropdown - shown when clicking on the stats */}
       {isStatsOpen && (
-        <div 
+        <div
           className="absolute bottom-8 right-2 z-30"
           onClick={(e) => e.stopPropagation()}
+          onKeyDown={handleDropdownKeyDown}
+          role="dialog"
+          aria-label="Stat rating options"
+          tabIndex={-1}
         >
           <div className="bg-popover border border-border rounded-md shadow-lg glass-card backdrop-blur-md p-1">
             <button
               type="button"
               className={cn(
                 'block w-full px-2 py-1 text-left text-xs transition-colors rounded',
-                stat === 'temp' 
-                  ? 'bg-red-500/20 text-red-500' 
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                stat === 'temp'
+                  ? 'bg-red-500/20 text-red-500'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
               )}
               onClick={() => handleStatChange('temp')}
             >
@@ -150,9 +180,9 @@ const PromptCardComponent = memo(function PromptCard({
               type="button"
               className={cn(
                 'block w-full px-2 py-1 text-left text-xs transition-colors rounded',
-                stat === 'good' 
-                  ? 'bg-yellow-500/20 text-yellow-500' 
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                stat === 'good'
+                  ? 'bg-yellow-500/20 text-yellow-500'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
               )}
               onClick={() => handleStatChange('good')}
             >
@@ -162,9 +192,9 @@ const PromptCardComponent = memo(function PromptCard({
               type="button"
               className={cn(
                 'block w-full px-2 py-1 text-left text-xs transition-colors rounded',
-                stat === 'excellent' 
-                  ? 'bg-green-500/20 text-green-500' 
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                stat === 'excellent'
+                  ? 'bg-green-500/20 text-green-500'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
               )}
               onClick={() => handleStatChange('excellent')}
             >
@@ -174,15 +204,14 @@ const PromptCardComponent = memo(function PromptCard({
               type="button"
               className={cn(
                 'block w-full px-2 py-1 text-left text-xs transition-colors rounded',
-                stat === null 
-                  ? 'bg-gray-800 text-gray-300' 
-                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                stat === null
+                  ? 'bg-gray-800 text-gray-300'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
               )}
               onClick={() => handleStatChange(null)}
             >
               N
             </button>
-
           </div>
         </div>
       )}

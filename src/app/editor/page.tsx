@@ -427,6 +427,23 @@ function EditorPageContent() {
       if (foundPrompt) {
         setPrompt(foundPrompt);
       } else {
+        // Check if prompt exists in localStorage data
+        const savedData = localStorage.getItem('promptBoxData');
+        if (savedData) {
+          try {
+            const parsedData = JSON.parse(savedData);
+            if (parsedData?.promptCards) {
+              const localStoragePrompt = parsedData.promptCards.find(
+                (p: PromptCard) => p.id === promptId,
+              );
+              if (localStoragePrompt) {
+                setPrompt(localStoragePrompt);
+                return;
+              }
+            }
+          } catch (_error) {}
+        }
+
         toast.error('Prompt not found');
         router.push('/');
         return;
@@ -460,15 +477,8 @@ function EditorPageContent() {
 
     // Get current available filters to determine what's new
     const filtersData = localStorage.getItem('promptbox_filters');
-    let existingCategories = [
-      'ALL',
-      'vibe',
-      'artist',
-      'writing',
-      'frontend',
-      'backend',
-    ];
-    let existingTags = ['ALL', 'chatgpt', 'super', 'prompt', 'work', 'vit'];
+    let existingCategories = ['ALL'];
+    let existingTags = ['ALL'];
 
     if (filtersData) {
       try {
@@ -486,13 +496,18 @@ function EditorPageContent() {
       prompt: updatedPrompt,
     };
 
-    localStorage.setItem('promptEditor_data', JSON.stringify(existingData));
+    try {
+      localStorage.setItem('promptEditor_data', JSON.stringify(existingData));
+      toast.success(
+        mode === 'create'
+          ? `Prompt "${updatedPrompt.title}" created successfully!`
+          : `Prompt "${updatedPrompt.title}" updated successfully!`,
+      );
+    } catch (_error) {
+      toast.error('Failed to save prompt. Please try again.');
+      return;
+    }
 
-    toast.success(
-      mode === 'create'
-        ? `Prompt "${updatedPrompt.title}" created successfully!`
-        : `Prompt "${updatedPrompt.title}" updated successfully!`,
-    );
     router.push('/');
   };
 
