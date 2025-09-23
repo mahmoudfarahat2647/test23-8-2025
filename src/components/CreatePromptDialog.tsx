@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import type { PromptCard } from '@/types/promptbox';
+import { BatteryRating } from '@/components/BatteryRating';
 
 interface CreatePromptDialogProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ export function CreatePromptDialog({
   const descriptionId = useId();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  // Use rating state but map to stats values (1=temp, 2=good, 3=excellent)
   const [rating, setRating] = useState(0);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -48,6 +50,7 @@ export function CreatePromptDialog({
     if (editingPrompt) {
       setTitle(editingPrompt.title);
       setDescription(editingPrompt.description);
+      // Map rating to stats values
       setRating(editingPrompt.rating);
       setSelectedCategories(editingPrompt.categories);
       setSelectedTags(editingPrompt.tags);
@@ -66,10 +69,11 @@ export function CreatePromptDialog({
       return;
     }
 
+    // Map rating value back to stats for the prompt
     const newPrompt: Omit<PromptCard, 'actions'> = {
       title: title.trim(),
       description: description.trim(),
-      rating,
+      rating, // Use rating value (1=temp, 2=good, 3=excellent)
       categories: selectedCategories,
       tags: selectedTags,
     };
@@ -122,8 +126,24 @@ export function CreatePromptDialog({
     }
   };
 
-  const setStarRating = (newRating: number) => {
-    setRating(newRating === rating ? 0 : newRating);
+  // Map rating value to stat label
+  const getStatLabel = (ratingValue: number) => {
+    switch (ratingValue) {
+      case 1: return 'Temp';
+      case 2: return 'Good';
+      case 3: return 'Excellent';
+      default: return 'N';
+    }
+  };
+
+  // Handle stat selection
+  const handleStatSelect = (stat: 'temp' | 'good' | 'excellent' | null) => {
+    switch (stat) {
+      case 'temp': setRating(1); break;
+      case 'good': setRating(2); break;
+      case 'excellent': setRating(3); break;
+      default: setRating(0);
+    }
   };
 
   return (
@@ -176,34 +196,77 @@ export function CreatePromptDialog({
             />
           </div>
 
-          {/* Rating */}
-          <div className="space-y-2">
-            <Label className="text-sm font-semibold text-foreground">
-              Quality Rating
-            </Label>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                {Array.from({ length: 5 }, (_, index) => (
-                  <button
-                    key={`rating-star-${index + 1}`}
-                    type="button"
-                    onClick={() => setStarRating(index + 1)}
-                    className="transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
-                  >
-                    <Star
-                      className={cn(
-                        'h-6 w-6 transition-colors',
-                        index < rating
-                          ? 'fill-amber-400 text-amber-400'
-                          : 'text-muted-foreground/40 hover:text-amber-300',
-                      )}
-                    />
-                  </button>
-                ))}
+          {/* Stats, Categories, and Tags Dropdowns */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Stats Dropdown */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-foreground">
+                  Stats
+                </Label>
+                <select
+                  value={rating}
+                  onChange={(e) => setRating(Number(e.target.value))}
+                  className="w-full h-8 px-2 py-1 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent"
+                >
+                  <option value={0}>N</option>
+                  <option value={1}>Temp</option>
+                  <option value={2}>Good</option>
+                  <option value={3}>Excellent</option>
+                </select>
               </div>
-              <span className="text-sm text-muted-foreground font-medium">
-                {rating > 0 ? `${rating}/5 stars` : 'No rating'}
-              </span>
+
+              {/* Categories Dropdown */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-foreground">
+                  Categories
+                </Label>
+                <div className="relative">
+                  <select
+                    multiple
+                    value={selectedCategories}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value);
+                      setSelectedCategories(selected);
+                    }}
+                    className="w-full h-24 px-2 py-1 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent"
+                  >
+                    {availableCategories
+                      .filter((cat) => cat !== 'ALL')
+                      .map((category) => (
+                        <option key={category} value={category}>
+                          {category}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Tags Dropdown */}
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold text-foreground">
+                  Tags
+                </Label>
+                <div className="relative">
+                  <select
+                    multiple
+                    value={selectedTags}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value);
+                      setSelectedTags(selected);
+                    }}
+                    className="w-full h-24 px-2 py-1 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent"
+                  >
+                    {availableTags
+                      .filter((tag) => tag !== 'ALL')
+                      .map((tag) => (
+                        <option key={tag} value={tag}>
+                          {tag}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
             </div>
           </div>
 

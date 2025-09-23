@@ -39,9 +39,10 @@ const initialPromptBoxData: PromptBoxData = {
       title: 'Creative Writing Assistant',
       description:
         'A powerful prompt for generating creative stories, poems, and artistic content with vivid imagery and compelling narratives.',
-      rating: 4,
+      rating: 2, // good
       tags: ['chatgpt', 'prompt', 'work'],
       categories: ['writing', 'vibe'],
+      pinned: false,
       actions: {
         edit: true,
         delete: true,
@@ -53,9 +54,10 @@ const initialPromptBoxData: PromptBoxData = {
       title: 'Frontend Code Generator',
       description:
         'Generate modern React components with TypeScript, Tailwind CSS, and best practices for responsive design.',
-      rating: 5,
+      rating: 3, // excellent
       tags: ['super', 'work', 'vit'],
       categories: ['frontend'],
+      pinned: false,
       actions: {
         edit: true,
         delete: true,
@@ -67,9 +69,10 @@ const initialPromptBoxData: PromptBoxData = {
       title: 'Backend API Designer',
       description:
         'Create robust REST APIs with proper authentication, validation, and documentation following industry standards.',
-      rating: 4,
+      rating: 2, // good
       tags: ['work', 'super'],
       categories: ['backend'],
+      pinned: false,
       actions: {
         edit: true,
         delete: true,
@@ -81,9 +84,10 @@ const initialPromptBoxData: PromptBoxData = {
       title: 'Digital Art Concept',
       description:
         'Generate detailed prompts for AI art generation with specific styles, lighting, and composition instructions.',
-      rating: 3,
+      rating: 1, // temp
       tags: ['prompt', 'vit'],
       categories: ['artist', 'vibe'],
+      pinned: false,
       actions: {
         edit: true,
         delete: true,
@@ -95,9 +99,10 @@ const initialPromptBoxData: PromptBoxData = {
       title: 'Productivity Workflow',
       description:
         'Optimize your daily workflow with smart automation suggestions and time management strategies.',
-      rating: 5,
+      rating: 3, // excellent
       tags: ['work', 'super'],
       categories: ['vibe'],
+      pinned: false,
       actions: {
         edit: true,
         delete: true,
@@ -109,9 +114,10 @@ const initialPromptBoxData: PromptBoxData = {
       title: 'Code Review Assistant',
       description:
         'Comprehensive code review prompts that check for security, performance, and maintainability issues.',
-      rating: 4,
+      rating: 2, // good
       tags: ['chatgpt', 'work'],
       categories: ['frontend', 'backend'],
+      pinned: false,
       actions: {
         edit: true,
         delete: true,
@@ -159,6 +165,7 @@ export default function PromptBox() {
                 p.id === prompt.id
                   ? {
                       ...prompt,
+                      pinned: p.pinned, // Preserve pinned state
                       actions: { edit: true, delete: true, copy: true },
                     }
                   : p,
@@ -168,7 +175,8 @@ export default function PromptBox() {
               const newPrompt = {
                 ...prompt,
                 id:
-                  prompt.id || prompt.title.toLowerCase().replace(/\s+/g, '-'),
+                  prompt.id || `new-prompt-${Date.now()}`,
+                pinned: false, // New prompts are not pinned by default
                 actions: { edit: true, delete: true, copy: true },
               };
               updatedPrompts = [...prev.promptCards, newPrompt];
@@ -245,24 +253,33 @@ export default function PromptBox() {
   }, []);
 
   const filteredCards = useMemo(() => {
-    return optimizedFilter(promptBoxData.promptCards, (card) => {
+    const filtered = optimizedFilter(promptBoxData.promptCards, (card) => {
       // Search filter
       const matchesSearch =
         searchValue === '' ||
         card.title.toLowerCase().includes(searchValue.toLowerCase()) ||
         card.description.toLowerCase().includes(searchValue.toLowerCase());
 
-      // Category filter
+      // Category filter - if no categories, show in ALL filter
       const matchesCategory =
         activeCategories.includes('ALL') ||
-        card.categories.some((category) => activeCategories.includes(category));
+        card.categories.some((category) => activeCategories.includes(category)) ||
+        (card.categories.length === 0 && activeCategories.includes('ALL'));
 
-      // Tag filter
+      // Tag filter - if no tags, show in ALL filter
       const matchesTag =
         activeTags.includes('ALL') ||
-        card.tags.some((tag) => activeTags.includes(tag));
+        card.tags.some((tag) => activeTags.includes(tag)) ||
+        (card.tags.length === 0 && activeTags.includes('ALL'));
 
       return matchesSearch && matchesCategory && matchesTag;
+    });
+
+    // Sort to show pinned items first
+    return filtered.sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      return 0;
     });
   }, [
     searchValue,
@@ -271,6 +288,16 @@ export default function PromptBox() {
     promptBoxData.promptCards,
     optimizedFilter,
   ]);
+
+  // Map rating value to stat label
+  const getStatLabel = (ratingValue: number) => {
+    switch (ratingValue) {
+      case 1: return 'Temp';
+      case 2: return 'Good';
+      case 3: return 'Excellent';
+      default: return 'N';
+    }
+  };
 
   // Copy prompt content to clipboard
   const handleCopyPrompt = useCallback(async (card: PromptCardType) => {
@@ -306,7 +333,7 @@ export default function PromptBox() {
   const handleEditPrompt = useCallback(
     (card: PromptCardType) => {
       // Generate a simple ID if the card doesn't have one
-      const cardId = card.id || card.title.toLowerCase().replace(/\s+/g, '-');
+      const cardId = card.id || card.title.toLowerCase().replace(/\s+/g, '-') || `prompt-${Date.now()}`;
 
       // Store current filters in localStorage for the editor to access
       localStorage.setItem(
@@ -331,11 +358,7 @@ export default function PromptBox() {
     if (deletingCard) {
       setPromptBoxData((prev) => {
         const newCards = prev.promptCards.filter(
-          (p) =>
-            !(
-              p.title === deletingCard.title &&
-              p.description === deletingCard.description
-            ),
+          (p) => p.id !== deletingCard.id
         );
         return {
           ...prev,
@@ -410,6 +433,44 @@ export default function PromptBox() {
     setActiveTags((prev) => prev.filter((tag) => tag !== tagToDelete));
 
     toast.success(`Tag "${tagToDelete}" deleted successfully!`);
+  }, []);
+
+  // Pin/unpin prompt
+  const handlePinPrompt = useCallback((card: PromptCardType) => {
+    setPromptBoxData((prev) => ({
+      ...prev,
+      promptCards: prev.promptCards.map((p) =>
+        p.id === card.id ? { ...p, pinned: !p.pinned } : p
+      ),
+    }));
+
+    toast.success(
+      card.pinned
+        ? `Prompt "${card.title}" unpinned successfully!`
+        : `Prompt "${card.title}" pinned successfully!`
+    );
+  }, []);
+
+  // Handle stat change for a prompt (using rating values 1=temp, 2=good, 3=excellent)
+  const handleStatChange = useCallback((card: PromptCardType, stat: 'temp' | 'good' | 'excellent' | null) => {
+    // Convert stat to rating value
+    let ratingValue = 0;
+    switch (stat) {
+      case 'temp': ratingValue = 1; break;
+      case 'good': ratingValue = 2; break;
+      case 'excellent': ratingValue = 3; break;
+      default: ratingValue = 0;
+    }
+
+    setPromptBoxData((prev) => ({
+      ...prev,
+      promptCards: prev.promptCards.map((p) =>
+        p.id === card.id ? { ...p, rating: ratingValue } : p
+      ),
+    }));
+
+    const statText = stat ? stat.charAt(0).toUpperCase() + stat.slice(1) : 'None';
+    toast.success(`Prompt "${card.title}" stat updated to ${statText}!`);
   }, []);
 
   return (
@@ -501,6 +562,8 @@ export default function PromptBox() {
                         onEdit={handleEditPrompt}
                         onDelete={handleDeletePrompt}
                         onCopy={handleCopyPrompt}
+                        onPin={handlePinPrompt}
+                        onStatChange={handleStatChange}
                       />
                     </div>
                   ))}

@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import type { PromptCard } from '@/types/promptbox';
+import { BatteryRating } from '@/components/BatteryRating';
 
 interface PromptEditorProps {
   prompt: PromptCard;
@@ -850,31 +851,16 @@ ${exampleContent}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
               {/* Rating */}
               <div className="space-y-1">
-                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                  <Star className="h-3 w-3" />
+                <Label className="text-xs font-medium text-muted-foreground">
                   Rating
                 </Label>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: 5 }, (_, index) => (
-                    <button
-                      key={`rating-star-${index + 1}`}
-                      type="button"
-                      onClick={() => handleRatingClick(index + 1)}
-                      className="transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-1 rounded p-0.5"
-                    >
-                      <Star
-                        className={cn(
-                          'h-4 w-4 transition-colors',
-                          index < rating
-                            ? 'fill-amber-400 text-amber-400'
-                            : 'text-muted-foreground/40 hover:text-amber-300',
-                        )}
-                      />
-                    </button>
-                  ))}
-                  <span className="text-xs text-muted-foreground ml-2">
-                    {rating > 0 ? `${rating}/5` : 'None'}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <BatteryRating 
+                    rating={rating} 
+                    maxRating={5} 
+                    isVertical={false} 
+                    onClick={handleRatingClick}
+                  />
                 </div>
               </div>
 
@@ -891,7 +877,7 @@ ${exampleContent}
                         <Badge
                           key={`selected-${category}`}
                           variant="default"
-                          className="text-xs px-2 py-0.5 gap-1"
+                          className="text-xs px-2 py-0.5 gap-1 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 border-cyan-500/20 text-white"
                         >
                           {category}
                           <button
@@ -899,7 +885,7 @@ ${exampleContent}
                             onClick={() => removeCategory(category)}
                             className="hover:bg-background/20 rounded-full p-0.5 transition-colors"
                           >
-                            <X className="h-2 w-2" />
+                            <X className="h-2 w-2 text-white" />
                           </button>
                         </Badge>
                       ))}
@@ -998,7 +984,12 @@ ${exampleContent}
                                       ? 'default'
                                       : 'outline'
                                   }
-                                  className="cursor-pointer text-xs px-2 py-0.5 flex-1 justify-start"
+                                  className={cn(
+                                    'cursor-pointer text-xs px-2 py-0.5 flex-1 justify-start',
+                                    categories.includes(category) &&
+                                      'bg-gradient-to-r from-cyan-500/10 to-teal-500/10 border-cyan-500/20 text-white',
+                                    !categories.includes(category) && 'text-white'
+                                  )}
                                   onClick={() => toggleCategory(category)}
                                 >
                                   {category}
@@ -1037,7 +1028,7 @@ ${exampleContent}
                         <Badge
                           key={`selected-${tag}`}
                           variant="secondary"
-                          className="text-xs px-2 py-0.5 gap-1 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 border-cyan-500/20"
+                          className="text-xs px-2 py-0.5 gap-1 bg-gradient-to-r from-cyan-500/10 to-teal-500/10 border-cyan-500/20 text-white"
                         >
                           {tag}
                           <button
@@ -1045,7 +1036,7 @@ ${exampleContent}
                             onClick={() => removeTag(tag)}
                             className="hover:bg-background/20 rounded-full p-0.5 transition-colors"
                           >
-                            <X className="h-2 w-2" />
+                            <X className="h-2 w-2 text-white" />
                           </button>
                         </Badge>
                       ))}
@@ -1141,7 +1132,8 @@ ${exampleContent}
                                   className={cn(
                                     'cursor-pointer text-xs px-2 py-0.5 flex-1 justify-start',
                                     tags.includes(tag) &&
-                                      'bg-gradient-to-r from-cyan-500/10 to-teal-500/10 border-cyan-500/20',
+                                      'bg-gradient-to-r from-cyan-500/10 to-teal-500/10 border-cyan-500/20 text-white',
+                                    !tags.includes(tag) && 'text-white'
                                   )}
                                   onClick={() => toggleTag(tag)}
                                 >
@@ -1274,7 +1266,7 @@ ${exampleContent}
 
                       {/* Format buttons positioned under Copy button but inside text area */}
                       <div className="relative">
-                        <div className="absolute top-7 right-2 flex items-center gap-1 bg-background/80 backdrop-blur-sm p-1 rounded border border-border">
+                        <div className="absolute top-7 right-4 flex items-center gap-1 bg-background/80 backdrop-blur-sm p-1 rounded border border-border">
                           <Button
                             type="button"
                             variant="ghost"
@@ -1434,7 +1426,7 @@ Your example code or content here
 
                       {/* Format buttons positioned under Copy button but inside text area */}
                       <div className="relative">
-                        <div className="absolute top-7 right-2 flex items-center gap-1 bg-background/80 backdrop-blur-sm p-1 rounded border border-border">
+                        <div className="absolute top-7 right-4 flex items-center gap-1 bg-background/80 backdrop-blur-sm p-1 rounded border border-border">
                           <Button
                             type="button"
                             variant="ghost"
@@ -1554,3 +1546,5 @@ Once upon a time, in a world where technology...
     </div>
   );
 }
+
+

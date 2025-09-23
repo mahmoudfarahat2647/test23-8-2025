@@ -1,11 +1,12 @@
 'use client';
 
 import { Copy, Edit, Pin, Star, Trash2 } from 'lucide-react';
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { PromptCard as PromptCardType } from '@/types/promptbox';
+import { BatteryRating } from '@/components/BatteryRating';
 
 interface PromptCardProps {
   card: PromptCardType;
@@ -13,35 +14,7 @@ interface PromptCardProps {
   onDelete?: (card: PromptCardType) => void;
   onCopy?: (card: PromptCardType) => void;
   onPin?: (card: PromptCardType) => void;
-}
-
-function StarRating({
-  rating,
-  maxRating = 5,
-}: {
-  rating: number;
-  maxRating?: number;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex items-center gap-0.5">
-        {Array.from({ length: maxRating }, (_, index) => (
-          <Star
-            key={`rating-star-${index + 1}`}
-            className={cn(
-              'h-3 w-3 transition-all duration-300',
-              index < rating
-                ? 'fill-amber-400 text-amber-400 drop-shadow-sm scale-110'
-                : 'text-muted-foreground/20 hover:text-muted-foreground/40',
-            )}
-          />
-        ))}
-      </div>
-      <span className="text-xs text-muted-foreground font-semibold tracking-wide">
-        {rating}/{maxRating}
-      </span>
-    </div>
-  );
+  onStatChange?: (card: PromptCardType, stat: 'temp' | 'good' | 'excellent' | null) => void;
 }
 
 const PromptCardComponent = memo(function PromptCard({
@@ -50,8 +23,75 @@ const PromptCardComponent = memo(function PromptCard({
   onDelete,
   onCopy,
   onPin,
+  onStatChange,
 }: PromptCardProps) {
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
   const hasContent = card.title || card.description;
+
+  // Since we can't modify the type, we'll use the rating property but treat different values as stats:
+  // 1 = temp, 2 = good, 3 = excellent
+  const getStatFromRating = () => {
+    switch (card.rating) {
+      case 1: return 'temp';
+      case 2: return 'good';
+      case 3: return 'excellent';
+      default: return null;
+    }
+  };
+
+  const stat = getStatFromRating();
+
+  const handleStatChange = (newStat: 'temp' | 'good' | 'excellent' | null) => {
+    // Convert stat back to rating value
+    let ratingValue = 0;
+    switch (newStat) {
+      case 'temp': ratingValue = 1; break;
+      case 'good': ratingValue = 2; break;
+      case 'excellent': ratingValue = 3; break;
+      default: ratingValue = 0;
+    }
+    
+    // Create a new card object with the updated rating
+    const updatedCard = { ...card, rating: ratingValue };
+    onStatChange?.(updatedCard, newStat);
+    setIsStatsOpen(false);
+  };
+
+  // Get display properties for the stat
+  const getStatProperties = () => {
+    switch (stat) {
+      case 'temp':
+        return {
+          text: 'Temp',
+          bgColor: 'bg-red-500/20',
+          textColor: 'text-red-500',
+          borderColor: 'border-red-500/30',
+        };
+      case 'good':
+        return {
+          text: 'Good',
+          bgColor: 'bg-yellow-500/20',
+          textColor: 'text-yellow-500',
+          borderColor: 'border-yellow-500/30',
+        };
+      case 'excellent':
+        return {
+          text: 'Excellent',
+          bgColor: 'bg-green-500/20',
+          textColor: 'text-green-500',
+          borderColor: 'border-green-500/30',
+        };
+      default:
+        return {
+          text: 'N',
+          bgColor: 'bg-gray-500/20',
+          textColor: 'text-gray-500',
+          borderColor: 'border-gray-500/30',
+        };
+    }
+  };
+
+  const statProps = getStatProperties();
 
   return (
     <Card
@@ -70,21 +110,91 @@ const PromptCardComponent = memo(function PromptCard({
       <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-gray-600/30 via-gray-500/20 to-gray-700/30 dark:opacity-100 opacity-0 pointer-events-none" />
       <div className="absolute inset-[1px] rounded-lg bg-card/95 backdrop-blur-md" />
 
-      {/* Floating decoration */}
-      <div className="absolute -top-4 -right-4 w-14 h-14 bg-primary/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700 animate-float" />
+      {/* Stats indicator - positioned at bottom right without taking space */}
+      <div className="absolute bottom-2 right-2 z-20">
+        <div
+          className={cn(
+            'px-2 py-1 rounded-full text-xs font-medium border cursor-pointer hover:opacity-80 transition-opacity min-w-[24px] text-center',
+            statProps.bgColor,
+            statProps.textColor,
+            statProps.borderColor,
+          )}
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsStatsOpen(!isStatsOpen);
+          }}
+        >
+          {statProps.text}
+        </div>
+      </div>
 
-      <div className="relative z-20">
+      {/* Stats Dropdown - shown when clicking on the stats */}
+      {isStatsOpen && (
+        <div 
+          className="absolute bottom-8 right-2 z-30"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="bg-popover border border-border rounded-md shadow-lg glass-card backdrop-blur-md p-1">
+            <button
+              type="button"
+              className={cn(
+                'block w-full px-2 py-1 text-left text-xs transition-colors rounded',
+                stat === 'temp' 
+                  ? 'bg-red-500/20 text-red-500' 
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              )}
+              onClick={() => handleStatChange('temp')}
+            >
+              Temp
+            </button>
+            <button
+              type="button"
+              className={cn(
+                'block w-full px-2 py-1 text-left text-xs transition-colors rounded',
+                stat === 'good' 
+                  ? 'bg-yellow-500/20 text-yellow-500' 
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              )}
+              onClick={() => handleStatChange('good')}
+            >
+              Good
+            </button>
+            <button
+              type="button"
+              className={cn(
+                'block w-full px-2 py-1 text-left text-xs transition-colors rounded',
+                stat === 'excellent' 
+                  ? 'bg-green-500/20 text-green-500' 
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              )}
+              onClick={() => handleStatChange('excellent')}
+            >
+              Excellent
+            </button>
+            <button
+              type="button"
+              className={cn(
+                'block w-full px-2 py-1 text-left text-xs transition-colors rounded',
+                stat === null 
+                  ? 'bg-gray-800 text-gray-300' 
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              )}
+              onClick={() => handleStatChange(null)}
+            >
+              N
+            </button>
+
+          </div>
+        </div>
+      )}
+
+      <div className="relative z-10">
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0 space-y-1">
               <CardTitle className="text-sm font-bold text-foreground line-clamp-2 mb-0 leading-tight group-hover:text-primary transition-colors duration-300">
                 {card.title || 'Untitled Prompt'}
               </CardTitle>
-              {card.rating > 0 && (
-                <div className="transform group-hover:scale-105 transition-transform duration-300">
-                  <StarRating rating={card.rating} />
-                </div>
-              )}
             </div>
 
             {/* Enhanced action buttons */}
@@ -141,7 +251,7 @@ const PromptCardComponent = memo(function PromptCard({
         </CardHeader>
 
         {(card.description || !hasContent) && (
-          <CardContent className="pb-3">
+          <CardContent className="pb-6">
             <p className="text-muted-foreground text-xs line-clamp-2 leading-relaxed group-hover:text-foreground/80 transition-colors duration-300">
               {card.description || 'No description available'}
             </p>

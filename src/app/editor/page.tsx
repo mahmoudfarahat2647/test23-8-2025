@@ -46,7 +46,7 @@ Create a story about a time-traveling artist who discovers that their paintings 
 - Poetry composition
 - Character backstory generation
 - World-building exercises`,
-    rating: 4,
+    rating: 2, // good
     tags: ['chatgpt', 'prompt', 'work'],
     categories: ['writing', 'vibe'],
     actions: { edit: true, delete: true, copy: true },
@@ -127,7 +127,7 @@ const Button: React.FC<ButtonProps> = ({
 - **Custom Hooks**: For reusable logic
 - **Context API**: For state management
 - **Error Boundaries**: For graceful error handling`,
-    rating: 5,
+    rating: 3, // excellent
     tags: ['super', 'work', 'vit'],
     categories: ['frontend'],
     actions: { edit: true, delete: true, copy: true },
@@ -273,7 +273,7 @@ app.post('/api/users', validateUser, async (req, res) => {
 - **Postman Collections**: Shareable API collections
 - **API Blueprint**: Markdown-based documentation
 - **Insomnia**: API testing and documentation`,
-    rating: 4,
+    rating: 2, // good
     tags: ['work', 'super'],
     categories: ['backend'],
     actions: { edit: true, delete: true, copy: true },
@@ -390,7 +390,7 @@ f/11, ISO 100
 - **DALL-E**: Be specific about style and composition
 - **Stable Diffusion**: Include negative prompts for better results
 - **Leonardo AI**: Utilize preset styles and models`,
-    rating: 3,
+    rating: 1, // temp
     tags: ['prompt', 'vit'],
     categories: ['artist', 'vibe'],
     actions: { edit: true, delete: true, copy: true },
@@ -432,14 +432,14 @@ function EditorPageContent() {
         return;
       }
     } else {
-      // Create new prompt
+      // Create new prompt with a unique ID
       setPrompt({
-        id: undefined,
+        id: `new-prompt-${Date.now()}`,
         title: '',
         description: '',
         content:
           '# New Prompt\n\nStart writing your prompt here...\n\n## Instructions\n\n1. Add your instructions here\n2. Provide examples\n3. Include tips and best practices\n',
-        rating: 0,
+        rating: 0, // No rating by default
         tags: [],
         categories: [],
         actions: { edit: true, delete: true, copy: true },
