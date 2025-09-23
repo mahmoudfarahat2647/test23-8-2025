@@ -15,7 +15,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import type { PromptCard } from '@/types/promptbox';
-import { BatteryRating } from '@/components/BatteryRating';
 
 interface CreatePromptDialogProps {
   isOpen: boolean;
@@ -267,100 +266,6 @@ export function CreatePromptDialog({
                   </select>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold text-foreground">
-              Categories
-            </Label>
-            <div className="flex flex-wrap gap-1.5">
-              {availableCategories
-                .filter((cat) => cat !== 'ALL')
-                .map((category) => (
-                  <Badge
-                    key={category}
-                    variant={
-                      selectedCategories.includes(category)
-                        ? 'default'
-                        : 'outline'
-                    }
-                    className={cn(
-                      'cursor-pointer transition-all duration-200 hover:scale-105 px-2.5 py-1 text-sm',
-                      selectedCategories.includes(category)
-                        ? 'shadow-sm ring-1 ring-primary/20'
-                        : 'hover:border-primary/50',
-                    )}
-                    onClick={() => toggleCategory(category)}
-                  >
-                    {category}
-                  </Badge>
-                ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                placeholder="Add custom category"
-                onKeyDown={(e) => e.key === 'Enter' && addNewCategory()}
-                className="flex-1 h-8"
-              />
-              <Button
-                type="button"
-                onClick={addNewCategory}
-                variant="outline"
-                size="sm"
-                disabled={!newCategory.trim()}
-                className="h-8 px-3"
-              >
-                Add
-              </Button>
-            </div>
-          </div>
-
-          {/* Tags */}
-          <div className="space-y-3">
-            <Label className="text-sm font-semibold text-foreground">
-              Tags
-            </Label>
-            <div className="flex flex-wrap gap-1.5">
-              {availableTags
-                .filter((tag) => tag !== 'ALL')
-                .map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant={selectedTags.includes(tag) ? 'default' : 'outline'}
-                    className={cn(
-                      'cursor-pointer transition-all duration-200 hover:scale-105 px-2.5 py-1 text-sm',
-                      selectedTags.includes(tag)
-                        ? 'shadow-sm ring-1 ring-primary/20'
-                        : 'hover:border-primary/50',
-                    )}
-                    onClick={() => toggleTag(tag)}
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-            </div>
-            <div className="flex gap-2">
-              <Input
-                value={newTag}
-                onChange={(e) => setNewTag(e.target.value)}
-                placeholder="Add custom tag"
-                onKeyDown={(e) => e.key === 'Enter' && addNewTag()}
-                className="flex-1 h-8"
-              />
-              <Button
-                type="button"
-                onClick={addNewTag}
-                variant="outline"
-                size="sm"
-                disabled={!newTag.trim()}
-                className="h-8 px-3"
-              >
-                Add
-              </Button>
             </div>
           </div>
         </div>

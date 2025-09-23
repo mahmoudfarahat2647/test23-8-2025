@@ -48,11 +48,6 @@ export function EditorToolbar({
   tags,
   onTagsChange,
 }: EditorToolbarProps) {
-  const [newCategory, setNewCategory] = useState('');
-  const [newTag, setNewTag] = useState('');
-  const [showCategoryInput, setShowCategoryInput] = useState(false);
-  const [showTagInput, setShowTagInput] = useState(false);
-
   // Map rating value to stat label
   const getStatLabel = (ratingValue: number) => {
     switch (ratingValue) {
@@ -61,46 +56,6 @@ export function EditorToolbar({
       case 3: return 'Excellent';
       default: return 'N';
     }
-  };
-
-  const toggleCategory = (category: string) => {
-    if (categories.includes(category)) {
-      onCategoriesChange(categories.filter((c) => c !== category));
-    } else {
-      onCategoriesChange([...categories, category]);
-    }
-  };
-
-  const toggleTag = (tag: string) => {
-    if (tags.includes(tag)) {
-      onTagsChange(tags.filter((t) => t !== tag));
-    } else {
-      onTagsChange([...tags, tag]);
-    }
-  };
-
-  const addNewCategory = () => {
-    if (newCategory.trim() && !categories.includes(newCategory.trim())) {
-      onCategoriesChange([...categories, newCategory.trim()]);
-      setNewCategory('');
-      setShowCategoryInput(false);
-    }
-  };
-
-  const addNewTag = () => {
-    if (newTag.trim() && !tags.includes(newTag.trim())) {
-      onTagsChange([...tags, newTag.trim()]);
-      setNewTag('');
-      setShowTagInput(false);
-    }
-  };
-
-  const removeCategory = (category: string) => {
-    onCategoriesChange(categories.filter((c) => c !== category));
-  };
-
-  const removeTag = (tag: string) => {
-    onTagsChange(tags.filter((t) => t !== tag));
   };
 
   return (

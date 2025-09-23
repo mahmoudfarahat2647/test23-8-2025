@@ -22,7 +22,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import type { PromptCard } from '@/types/promptbox';
-import { BatteryRating } from '@/components/BatteryRating';
 
 interface PromptEditorProps {
   prompt: PromptCard;
@@ -119,10 +118,6 @@ export function PromptEditor({
       } catch (_error) {}
     }
   }, []);
-
-  const handleRatingClick = (newRating: number) => {
-    setRating(newRating === rating ? 0 : newRating);
-  };
 
   const toggleCategory = (category: string) => {
     if (categories.includes(category)) {
@@ -849,18 +844,22 @@ ${exampleContent}
 
             {/* Compact Rating, Categories, and Tags in One Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-              {/* Rating */}
+              {/* Stats */}
               <div className="space-y-1">
                 <Label className="text-xs font-medium text-muted-foreground">
-                  Rating
+                  Stats
                 </Label>
                 <div className="flex items-center gap-2">
-                  <BatteryRating 
-                    rating={rating} 
-                    maxRating={5} 
-                    isVertical={false} 
-                    onClick={handleRatingClick}
-                  />
+                  <select
+                    value={rating}
+                    onChange={(e) => setRating(Number(e.target.value))}
+                    className="h-7 px-2 text-xs border border-input rounded-md bg-background focus:outline-none focus:ring-1 focus:ring-ring focus:border-transparent"
+                  >
+                    <option value={0}>N</option>
+                    <option value={1}>Temp</option>
+                    <option value={2}>Good</option>
+                    <option value={3}>Excellent</option>
+                  </select>
                 </div>
               </div>
 
